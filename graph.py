@@ -7,6 +7,7 @@ class UIWindow(object):
     def __init__(self, MainWindow):
         super().__init__()
         self.MainWindow = MainWindow
+        # TODO: set Size
         self.MainWindow.setGeometry(100, 100, 600, 500)
         self.MainWindow.setObjectName("Monitor")
         self.MainWindow.setWindowTitle("Monitor")
