@@ -1,46 +1,96 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot, QCoreApplication
+sys.path.append("./components/")
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore, QtGui
+from pyqtgraph.dockarea import DockArea,Dock
+import numpy as np
 
-class App(QWidget):
+from field2Dock import Field2Dock
+from temperatureGraph import TemperatureGraph
 
-    def __init__(self):
+class UIWindow(object):
+
+    def __init__(self, MainWindow):
         super().__init__()
-        self.title = "Monitor"
-        self.left = 10
-        self.top = 10
-        # TODO: raspberry pi
-        self.width = 640
-        self.height = 480
+        pg.setConfigOptions(imageAxisOrder='row-major')
 
-        self.is_start = False
-        self.initUI()
+        # MARK: Declaration
+        self.MainWindow = MainWindow
+        self.tabwidg = QtGui.QTabWidget()
+        self.area = DockArea()
+        self.plotDock = Dock("Plots", size=(300, 400))
+        self.filed1Dock = Dock("field 1", size=(60, 20))
+        self.filed2Dock = Field2Dock()
+        self.graph = TemperatureGraph()
 
-    def initUI(self):
-        self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
+        self.MainWindow.setGeometry(100, 100, 1000, 900)
+        self.MainWindow.setObjectName("Monitor")
+        self.MainWindow.setWindowTitle("Data Logger")
+        self.MainWindow.statusBar().showMessage('')
+        self.MainWindow.setAcceptDrops(True)
 
-        self.button = QPushButton('start', self)
-        # 吹き出し
-        self.button.setToolTip('This is an example button')
-        # buttonのサイズをいい感じに調整
-        self.button.resize(self.button.sizeHint())
-        # buttonの位置
-        self.button.move(100,70)
-        self.button.clicked.connect(lambda: self.on_click(self.is_start))
-        # button.clicked.connect(QCoreApplication.instance().quit)
+        # self.__is_running = True
 
-        self.show()
+        self.__setLayout()
+        self.__setTimer()
+        self.__setGraph()
+        # self.__setBtn()
 
-    @pyqtSlot()
-    def on_click(self, is_start):
-        self.is_start = not self.is_start
-        button_title = "stop" if is_start else "start"
-        self.button.setText(button_title)
+        self.__plotGraph()
 
+        self.MainWindow.show()
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    ex = App()
+    # MARK: Set
+    def __setLayout(self):
+        self.MainWindow.setCentralWidget(self.tabwidg)
+        self.tabwidg.addTab(self.area, "Data")
+
+        self.area.addDock(self.plotDock, "top")
+        self.area.addDock(self.filed1Dock, "left")
+        self.area.addDock(self.filed2Dock, "bottom", self.filed1Dock)
+
+        self.plotDock.addWidget(self.graph)
+
+    def __setTimer(self):
+        self.timer = pg.QtCore.QTimer()
+        self.timer.timeout.connect(self.__update)
+
+    def __setGraph(self):
+        print("msec : data")
+
+        # x axis
+        self.ptr = 0
+        # y axis
+        self.data = np.random.normal(size=300)
+
+        self.curve = self.graph.pl.plot(self.data)
+
+    # def __setBtn(self):
+        # self.startBtn.clicked.connect(self.__onClickedStartStopBtn)
+        # self.stopBtn.clicked.connect(self.__onClickedStartStopBtn)
+
+    # MARK: Methods
+    def __onClickedStartStopBtn(self):
+        self.__is_running = not (self.__is_running)
+
+    def __update(self):
+        # if self.__is_running:
+        self.data[:-1] = self.data[1:]
+        # TODO:  set data
+        self.data[-1] = np.random.normal()
+
+        self.ptr += 1
+        self.curve.setData(self.data)
+        self.curve.setPos(self.ptr, 0)
+
+        print(str(self.ptr) + " : " + str(self.data[-1]))
+
+    def __plotGraph(self):
+        self.timer.start(0)
+
+if __name__ == '__main__':
+    import sys
+    app = QtGui.QApplication(sys.argv)
+    MainWindow =  QtGui.QMainWindow()
+    ui = UIWindow(MainWindow)
     sys.exit(app.exec_())
