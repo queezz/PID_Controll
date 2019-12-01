@@ -33,17 +33,16 @@ class Worker(QtCore.QObject):
     def work(self):
         self.__setThread()
         if TEST:
+            self.__test()
+        else:
             if self.type == "Temperature":
-                pass
+                self.__temperature()
             elif self.type == "Pressure1":
                 pass
             elif self.type == "Pressure2":
                 pass
             else:
                 return
-            self.__test()
-        else:
-            pass
 
     def abort(self):
         self.sigMsg.emit("Worker #{} aborting acquisition".format(self.__id))
@@ -68,7 +67,6 @@ class Worker(QtCore.QObject):
             currentTime = datetime.datetime.now()
             deltaSeconds = (currentTime - startTime).total_seconds()
 
-            # TODO: 実際のデータをとる
             self.data[step] = [deltaSeconds, np.random.normal()*10]
 
             if step%9 == 0 and step!=0:
@@ -91,3 +89,50 @@ class Worker(QtCore.QObject):
             )
         self.sigDone.emit(self.__id, self.type)
         return
+
+    @QtCore.pyqtSlot()
+    def __temperature(self):
+        aio = AIO.AIO_32_0RA_IRC(0x49, 0x3e)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(17, GPIO.OUT)
+        startTime = datetime.datetime.now()
+        totalStep = 0
+        step = 0
+        while not (self.__abort):
+            time.sleep(0.01)
+            voltage = aio.analog_read_volt(0, aio.DataRate.DR_860SPS)
+            currentTime = datetime.datetime.now()
+            deltaSeconds = (currentTime - startTime).total_seconds()
+
+            # TODO: 実際のデータをとる, 計算
+            self.data[step] = [deltaSeconds, voltage]
+
+            # TODO: PID Controll
+            self.__PIDControll()
+
+            if step%9 == 0 and step!=0:
+                self.sigStep.emit(self.type, self.data)
+                self.data = np.zeros(shape=(10, 2))
+                step = 0
+            else:
+                step += 1
+            totalStep += 1
+
+            self.__app.processEvents()
+
+        else:
+            if self.data[step][0] == 0.0:
+                step -= 1
+            if step > -1:
+                self.sigStep.emit(self.type, self.data[:step+1, :])
+            self.sigMsg.emit(
+                "Worker #{} aborting work at step {}".format(self.__id, totalStep)
+            )
+        self.sigDone.emit(self.__id, self.type)
+        return
+
+    def __PIDControll(self):
+        pass
+
+if __name__ == "__main__":
+    pass
