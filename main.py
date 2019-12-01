@@ -10,12 +10,13 @@ import datetime
 from mainView import UIWindow
 from worker import Worker
 
+# debug
 def trap_exc_during_debug(*args):
     print(args)
 
 sys.excepthook = trap_exc_during_debug
 
-# QObjectを継承しないとconnectが上手く使えない
+# must inherit QtCore.QObject in order to use 'connect'
 class MainWidget(QtCore.QObject, UIWindow):
     THREADS_NAME = ["Temperature", "Pressure1", "Pressure2"]
 
@@ -32,8 +33,8 @@ class MainWidget(QtCore.QObject, UIWindow):
         QtCore.QThread.currentThread().setObjectName("main")
 
         self.__workers_done = 0
-        self.__threads = []
         self.__stepCount = 0
+        self.__threads = []
 
         self.tData = np.zeros(shape=(301, 2))
         self.p1Data = np.zeros(shape=(301, 2))
@@ -84,15 +85,7 @@ class MainWidget(QtCore.QObject, UIWindow):
                 index=False
             )
 
-            if name == "Temperature":
-                work = worker.temperatureWork
-            elif name == "Pressure1":
-                work = worker.pressure1Work
-            elif name == "Pressure2":
-                work = worker.pressure2Work
-            else:
-                return
-            thread.started.connect(work)
+            thread.started.connect(worker.work)
             thread.start()
 
     @QtCore.pyqtSlot(str, np.ndarray)
@@ -118,17 +111,20 @@ class MainWidget(QtCore.QObject, UIWindow):
             return
 
     def __setStepData(self, data: np.ndarray, xyResult: np.ndarray, type: str):
-        df = pd.DataFrame(xyResult)
+        self.__save(xyResult, type)
+        data = np.roll(data, -10)
+        data = np.concatenate((data[:-10, :], np.array(xyResult)))
+
+        return data
+
+    def __save(self, data: np.ndarray, type: str):
+        df = pd.DataFrame(data)
         df.to_csv(
             "./data/{}/out_{}.csv".format(type, self.__stepCount),
             mode="a",
             header=False,
             index=False
         )
-        data = np.roll(data, -10)
-        data = np.concatenate((data[:-10, :], np.array(xyResult)))
-
-        return data
 
     @QtCore.pyqtSlot(int, str)
     def onWorkerDone(self, workerId: int, type: str):

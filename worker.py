@@ -14,6 +14,7 @@ except:
     print("no RPi.GPIO or AIO")
     TEST = True
 
+# must inherit QtCore.QObject in order to use 'connect'
 class Worker(QtCore.QObject):
 
     sigStep = QtCore.pyqtSignal(str, np.ndarray)
@@ -29,26 +30,17 @@ class Worker(QtCore.QObject):
         self.data = np.zeros(shape=(10, 2))
 
     @QtCore.pyqtSlot()
-    def temperatureWork(self):
+    def work(self):
         self.__setThread()
         if TEST:
-            self.__test()
-        else:
-            pass
-
-
-    @QtCore.pyqtSlot()
-    def pressure1Work(self):
-        self.__setThread()
-        if TEST:
-            self.__test()
-        else:
-            pass
-
-    @QtCore.pyqtSlot()
-    def pressure2Work(self):
-        self.__setThread()
-        if TEST:
+            if self.type == "Temperature":
+                pass
+            elif self.type == "Pressure1":
+                pass
+            elif self.type == "Pressure2":
+                pass
+            else:
+                return
             self.__test()
         else:
             pass
@@ -86,7 +78,7 @@ class Worker(QtCore.QObject):
             else:
                 step += 1
             totalStep += 1
-            # 待機状態にする
+
             self.__app.processEvents()
 
         else:

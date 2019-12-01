@@ -15,7 +15,6 @@ class UIWindow(object):
         super().__init__()
         pg.setConfigOptions(imageAxisOrder='row-major')
 
-        # MARK: Declaration
         self.MainWindow = QtGui.QMainWindow()
         self.tabwidg = QtGui.QTabWidget()
         self.area = DockArea()
@@ -30,11 +29,8 @@ class UIWindow(object):
         self.MainWindow.statusBar().showMessage('')
         self.MainWindow.setAcceptDrops(True)
 
-        # self.__is_running = True
-
         self.__setLayout()
 
-    # MARK: Set
     def __setLayout(self):
         self.MainWindow.setCentralWidget(self.tabwidg)
         self.tabwidg.addTab(self.area, "Data")
@@ -51,7 +47,6 @@ class UIWindow(object):
 if __name__ == '__main__':
     import sys
     app = QtGui.QApplication(sys.argv)
-    MainWindow =  QtGui.QMainWindow()
     ui = UIWindow()
     ui.showMain()
     sys.exit(app.exec_())

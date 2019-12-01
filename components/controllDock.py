@@ -26,7 +26,6 @@ class ControllDock(Dock):
         self.valueP2Bw = QtGui.QTextBrowser()
         self.valueP2Bw.setMaximumHeight(65)
 
-
         self.log = QtGui.QTextEdit()
         self.progress = QtGui.QTextEdit()
 
