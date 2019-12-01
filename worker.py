@@ -16,7 +16,7 @@ except:
 
 class Worker(QtCore.QObject):
 
-    sigStep = QtCore.pyqtSignal(str, list, list)
+    sigStep = QtCore.pyqtSignal(str, np.ndarray)
     sigDone = QtCore.pyqtSignal(int, str)
     sigMsg = QtCore.pyqtSignal(str)
 
@@ -26,8 +26,7 @@ class Worker(QtCore.QObject):
         self.type = type
         self.__app = app
         self.__abort = False
-        self.xdata = []
-        self.ydata = []
+        self.data = np.zeros(shape=(10, 2))
 
     @QtCore.pyqtSlot()
     def temperatureWork(self):
@@ -70,27 +69,33 @@ class Worker(QtCore.QObject):
     @QtCore.pyqtSlot()
     def __test(self):
         startTime = datetime.datetime.now()
+        totalStep = 0
         step = 0
         while not (self.__abort):
             time.sleep(0.01)
             currentTime = datetime.datetime.now()
             deltaSeconds = (currentTime - startTime).total_seconds()
-            self.xdata.append(deltaSeconds)
 
-            # TODO: 実際のdata追加
-            self.ydata.append(np.random.normal()*10)
+            # TODO: 実際のデータをとる
+            self.data[step] = [deltaSeconds, np.random.normal()*10]
 
-            if step%10 == 0:
-                self.sigStep.emit(self.type, self.xdata, self.ydata)
-                self.xdata = []
-                self.ydata = []
-            step += 1
+            if step%9 == 0 and step!=0:
+                self.sigStep.emit(self.type, self.data)
+                self.data = np.zeros(shape=(10, 2))
+                step = 0
+            else:
+                step += 1
+            totalStep += 1
             # 待機状態にする
             self.__app.processEvents()
 
         else:
+            if self.data[step][0] == 0.0:
+                step -= 1
+            if step > -1:
+                self.sigStep.emit(self.type, self.data[:step+1, :])
             self.sigMsg.emit(
-                "Worker #{} aborting work at step {}".format(self.__id, step)
+                "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
         self.sigDone.emit(self.__id, self.type)
         return

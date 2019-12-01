@@ -4,6 +4,7 @@ sys.path.append('./components')
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 import numpy as np
+import pandas as pd
 import datetime
 
 from mainView import UIWindow
@@ -32,15 +33,11 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         self.__workers_done = 0
         self.__threads = []
+        self.__stepCount = 0
 
-        self.xTData = []
-        self.yTData = []
-
-        self.xP1Data = []
-        self.yP1Data = []
-
-        self.xP2Data = []
-        self.yP2Data = []
+        self.tData = np.zeros(shape=(301, 2))
+        self.p1Data = np.zeros(shape=(301, 2))
+        self.p2Data = np.zeros(shape=(301, 2))
 
         self.valueTPlot = self.graph.temperaturePl.plot(pen='#6ac600')
         self.valueP1Plot = self.graph.pressurePl1.plot(pen='#6ac600')
@@ -55,6 +52,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.controllDock.stopBtn.setEnabled(True)
 
         self.__workers_done = 0
+        self.__stepCount += 1
 
         try:
             for thread, worker in self.__threads:
@@ -79,6 +77,13 @@ class MainWidget(QtCore.QObject, UIWindow):
 
             self.sigAbortWorkers.connect(worker.abort)
 
+            df = pd.DataFrame(np.zeros(shape=(1, 2)))
+            df.to_csv(
+                "./data/{}/out_{}.csv".format(name, self.__stepCount),
+                header=["Time", "{}".format(name)],
+                index=False
+            )
+
             if name == "Temperature":
                 work = worker.temperatureWork
             elif name == "Pressure1":
@@ -90,61 +95,58 @@ class MainWidget(QtCore.QObject, UIWindow):
             thread.started.connect(work)
             thread.start()
 
-    @QtCore.pyqtSlot(str, list, list)
-    def onWorkerStep(self, type: str, xResult: list, yResult: list):
-        txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(yResult[-1])
+    @QtCore.pyqtSlot(str, np.ndarray)
+    def onWorkerStep(self, type: str, xyResult: np.ndarray):
+        txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(xyResult[-1][1])
 
         if type == "Temperature":
             self.controllDock.valueTBw.setText(txt)
-            self.xTData, self.yTData = self.__setStepData(self.xTData, self.yTData, xResult, yResult)
-            self.valueTPlot.setData(self.xTData, self.yTData)
+            self.tData = self.__setStepData(self.tData, xyResult, type)
+            self.valueTPlot.setData(self.tData[:, 0], self.tData[:, 1])
             return
         elif type == "Pressure1":
             self.controllDock.valueP1Bw.setText(txt)
-            self.xP1Data, self.yP1Data = self.__setStepData(self.xP1Data, self.yP1Data, xResult, yResult)
-            self.valueP1Plot.setData(self.xP1Data, self.yP1Data)
+            self.p1Data = self.__setStepData(self.p1Data, xyResult, type)
+            self.valueP1Plot.setData(self.p1Data[:, 0], self.p1Data[:, 1])
             return
         elif type == "Pressure2":
             self.controllDock.valueP2Bw.setText(txt)
-            self.xP2Data, self.yP2Data = self.__setStepData(self.xP2Data, self.yP2Data, xResult, yResult)
-            self.valueP2Plot.setData(self.xP2Data, self.yP2Data)
+            self.p2Data = self.__setStepData(self.p2Data, xyResult, type)
+            self.valueP2Plot.setData(self.p2Data[:, 0], self.p2Data[:, 1])
             return
         else:
             return
 
-    def __setStepData(self, xdata: list, ydata: list, xResult: list, yResult: list):
-        if(len(xdata)==301):
-            xdata = np.roll(xdata, -10)
-            ydata = np.roll(ydata, -10)
+    def __setStepData(self, data: np.ndarray, xyResult: np.ndarray, type: str):
+        df = pd.DataFrame(xyResult)
+        df.to_csv(
+            "./data/{}/out_{}.csv".format(type, self.__stepCount),
+            mode="a",
+            header=False,
+            index=False
+        )
+        data = np.roll(data, -10)
+        data = np.concatenate((data[:-10, :], np.array(xyResult)))
 
-            xdata = np.concatenate((xdata[:-10], np.array(xResult)))
-            ydata = np.concatenate((ydata[:-10], np.array(yResult)))
-        else:
-            xdata = np.concatenate((xdata, np.array(xResult)))
-            ydata = np.concatenate((ydata, np.array(yResult)))
-
-        return xdata, ydata
+        return data
 
     @QtCore.pyqtSlot(int, str)
     def onWorkerDone(self, workerId: int, type: str):
-        self.logDock.log.append("worker #{} done".format(workerId))
+        self.logDock.log.append("Worker #{} done".format(workerId))
         self.logDock.progress.append("-- Signal {} STOPPED".format(workerId))
         self.__workers_done += 1
 
         if type == "Temperature":
-            self.xTData = []
-            self.yTData = []
+            self.tData = np.zeros(shape=(301, 2))
         elif type == "Pressure1":
-            self.xP1Data = []
-            self.yP1Data = []
+            self.p1Data = np.zeros(shape=(301, 2))
         elif type == "Pressure2":
-            self.xP2Data = []
-            self.yP2Data = []
+            self.p2Data = np.zeros(shape=(301, 2))
         else:
             return
 
         if self.__workers_done == len(self.THREADS_NAME):
-            self.abortWorkers()
+            # self.abortWorkers()   # not necessary
             self.logDock.log.append("No more workers active")
             self.controllDock.startBtn.setEnabled(True)
             self.controllDock.stopBtn.setDisabled(True)
