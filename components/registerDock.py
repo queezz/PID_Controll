@@ -1,5 +1,5 @@
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui
+from pyqtgraph.Qt import QtGui
 from pyqtgraph.dockarea import Dock
 
 class RegisterDock(Dock):

@@ -1,7 +1,4 @@
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui
-from pyqtgraph.dockarea import DockArea,Dock
-import numpy as np
 
 class Graph(pg.GraphicsLayoutWidget):
     def __init__(self):

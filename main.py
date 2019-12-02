@@ -1,11 +1,7 @@
 import sys
-sys.path.append('./components')
-
 from pyqtgraph.Qt import QtCore, QtGui
-import pyqtgraph as pg
 import numpy as np
 import pandas as pd
-import datetime
 
 from mainView import UIWindow
 from worker import Worker
@@ -26,11 +22,11 @@ class MainWidget(QtCore.QObject, UIWindow):
     def __init__(self, app: QtGui.QApplication):
         super(self.__class__, self).__init__()
         self.__app = app
-        self.controllDock.startBtn.clicked.connect(self.startThreads)
-        self.controllDock.stopBtn.clicked.connect(self.abortWorkers)
+        self.controlDock.startBtn.clicked.connect(self.startThreads)
+        self.controlDock.stopBtn.clicked.connect(self.abortWorkers)
         self.registerDock.registerBtn.clicked.connect(self.registerTemperature)
 
-        self.controllDock.stopBtn.setDisabled(True)
+        self.controlDock.stopBtn.setDisabled(True)
         self.registerDock.setTemperature(self.DEFAULT_TEMPERATURE)
 
         QtCore.QThread.currentThread().setObjectName("main")
@@ -53,8 +49,8 @@ class MainWidget(QtCore.QObject, UIWindow):
     def startThreads(self):
         self.logDock.log.append("starting {} threads".format(len(self.THREADS_NAME)))
 
-        self.controllDock.startBtn.setDisabled(True)
-        self.controllDock.stopBtn.setEnabled(True)
+        self.controlDock.startBtn.setDisabled(True)
+        self.controlDock.stopBtn.setEnabled(True)
         self.registerDock.registerBtn.setDisabled(True)
 
         self.__workers_done = 0
@@ -84,14 +80,14 @@ class MainWidget(QtCore.QObject, UIWindow):
             self.sigAbortWorkers.connect(worker.abort)
 
             df = pd.DataFrame(np.zeros(shape=(1, 2)))
-            # TODO: Headerにtemperatureの値
+            # TODO: set temperature in header
             df.to_csv(
                 "./data/{}/out_{}.csv".format(name, self.__stepCount),
                 header=["Time", "{}".format(name)],
                 index=False
             )
 
-            self.controllDock.setStatus(name, True)
+            self.controlDock.setStatus(name, True)
 
             thread.started.connect(worker.work)
             thread.start()
@@ -101,17 +97,17 @@ class MainWidget(QtCore.QObject, UIWindow):
         txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(xyResult[-1][1])
 
         if type == "Temperature":
-            self.controllDock.valueTBw.setText(txt)
+            self.controlDock.valueTBw.setText(txt)
             self.tData = self.__setStepData(self.tData, xyResult, type)
             self.valueTPlot.setData(self.tData[:, 0], self.tData[:, 1])
             return
         elif type == "Pressure1":
-            self.controllDock.valueP1Bw.setText(txt)
+            self.controlDock.valueP1Bw.setText(txt)
             self.p1Data = self.__setStepData(self.p1Data, xyResult, type)
             self.valueP1Plot.setData(self.p1Data[:, 0], self.p1Data[:, 1])
             return
         elif type == "Pressure2":
-            self.controllDock.valueP2Bw.setText(txt)
+            self.controlDock.valueP2Bw.setText(txt)
             self.p2Data = self.__setStepData(self.p2Data, xyResult, type)
             self.valueP2Plot.setData(self.p2Data[:, 0], self.p2Data[:, 1])
             return
@@ -119,7 +115,7 @@ class MainWidget(QtCore.QObject, UIWindow):
             return
 
     def __setStepData(self, data: np.ndarray, xyResult: np.ndarray, type: str):
-        # self.__save(xyResult, type)
+        self.__save(xyResult, type)
         data = np.roll(data, -10)
         data = np.concatenate((data[:-10, :], np.array(xyResult)))
 
@@ -149,13 +145,13 @@ class MainWidget(QtCore.QObject, UIWindow):
         else:
             return
 
-        self.controllDock.setStatus(type, False)
+        self.controlDock.setStatus(type, False)
 
         if self.__workers_done == len(self.THREADS_NAME):
             # self.abortWorkers()   # not necessary
             self.logDock.log.append("No more workers active")
-            self.controllDock.startBtn.setEnabled(True)
-            self.controllDock.stopBtn.setDisabled(True)
+            self.controlDock.startBtn.setEnabled(True)
+            self.controlDock.stopBtn.setDisabled(True)
             self.registerDock.registerBtn.setEnabled(True)
 
     @QtCore.pyqtSlot()

@@ -1,10 +1,8 @@
-import sys
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui
-from pyqtgraph.dockarea import DockArea,Dock
-import numpy as np
+from pyqtgraph.Qt import QtGui
+from pyqtgraph.dockarea import DockArea, Dock
 
-from components.controllDock import ControllDock
+from components.controlDock import ControlDock
 from components.logDock import LogDock
 from components.registerDock import RegisterDock
 from components.graph import Graph
@@ -19,7 +17,7 @@ class UIWindow(object):
         self.tabwidg = QtGui.QTabWidget()
         self.area = DockArea()
         self.plotDock = Dock("Plots", size=(300, 400))
-        self.controllDock = ControllDock()
+        self.controlDock = ControlDock()
         self.logDock = LogDock()
         self.registerDock = RegisterDock()
         self.graph = Graph()
@@ -37,8 +35,8 @@ class UIWindow(object):
         self.tabwidg.addTab(self.area, "Data")
 
         self.area.addDock(self.plotDock, "top")
-        self.area.addDock(self.controllDock, "left")
-        self.area.addDock(self.logDock, "bottom", self.controllDock)
+        self.area.addDock(self.controlDock, "left")
+        self.area.addDock(self.logDock, "bottom", self.controlDock)
         self.area.addDock(self.registerDock, "above", self.logDock)
 
         self.plotDock.addWidget(self.graph)

@@ -1,11 +1,11 @@
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui
+from pyqtgraph.Qt import QtGui
 from pyqtgraph.dockarea import Dock
 
-class ControllDock(Dock):
+class ControlDock(Dock):
 
     def __init__(self):
-        super().__init__("Controll")
+        super().__init__("Control")
         self.setStretch(30, 10)
 
         self.widget = pg.LayoutWidget()
@@ -18,7 +18,6 @@ class ControllDock(Dock):
         self.valueTBw = QtGui.QTextBrowser()
         self.valueTBw.setMaximumHeight(65)
 
-
         self.pressure1Label = QtGui.QLabel(self.__setLabelFont("Pressure1", "#000001"))
         self.pressure1Status = QtGui.QLabel(self.__setStatusFont(False))
         self.valueP1Bw = QtGui.QTextBrowser()
@@ -28,9 +27,6 @@ class ControllDock(Dock):
         self.pressure2Status = QtGui.QLabel(self.__setStatusFont(False))
         self.valueP2Bw = QtGui.QTextBrowser()
         self.valueP2Bw.setMaximumHeight(65)
-
-        self.log = QtGui.QTextEdit()
-        self.progress = QtGui.QTextEdit()
 
         self.__setLayout()
 
@@ -57,12 +53,10 @@ class ControllDock(Dock):
         return txt
 
     def __setStatusFont(self, active: bool):
-        txt = ""
-        if active:
-            txt = "<font color={}><h3>{}</h3></font>".format("#FF005D", "Active")
-        else:
-            txt = "<font color={}><h3>{}</h3></font>".format("#002AFF", "InActive")
-        return txt
+        color = "#FF005D" if active else "#002AFF"
+        txt = "Active" if active else "InActive"
+
+        return "<font color={}><h3>{}</h3></font>".format(color, txt)
 
     def setStatus(self, type: str, active: bool):
         txt = self.__setStatusFont(active)

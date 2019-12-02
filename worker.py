@@ -1,9 +1,6 @@
-import sys
-sys.path.append("./components/")
 import time
 import datetime
 from pyqtgraph.Qt import QtCore, QtGui
-import pyqtgraph as pg
 import numpy as np
 
 TEST = False
