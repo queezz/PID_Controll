@@ -16,4 +16,4 @@ $ pyton3 main.py
 
 ### data
 
-mesured data is stored in `data/`
+measured data is stored in `data/`
