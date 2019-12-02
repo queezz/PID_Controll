@@ -34,7 +34,7 @@ class Worker(QtCore.QObject):
             self.__test()
         else:
             if self.__type == "Temperature":
-                self.__temperature()
+                self.__plotTemperature()
             elif self.__type == "Pressure1":
                 self.__test()
                 pass
@@ -91,7 +91,7 @@ class Worker(QtCore.QObject):
         return
 
     @QtCore.pyqtSlot()
-    def __temperature(self):
+    def __plotTemperature(self):
         print(self.__temperature)
         aio = AIO.AIO_32_0RA_IRC(0x49, 0x3e)
         GPIO.setmode(GPIO.BCM)
