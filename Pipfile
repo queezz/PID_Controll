@@ -9,6 +9,7 @@ verify_ssl = true
 pyqt5 = "*"
 pyqtgraph = "*"
 pandas = "*"
+RPi.GPIO = "*"
 
 [requires]
 python_version = "3.7"

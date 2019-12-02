@@ -38,8 +38,10 @@ class Worker(QtCore.QObject):
             if self.type == "Temperature":
                 self.__temperature()
             elif self.type == "Pressure1":
+                self.__test()
                 pass
             elif self.type == "Pressure2":
+                self.__test()
                 pass
             else:
                 return
@@ -128,11 +130,16 @@ class Worker(QtCore.QObject):
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
+            GPIO.cleanup()
         self.sigDone.emit(self.__id, self.type)
         return
 
-    def __PIDControll(self):
-        pass
+    def __PIDControll(self, voltage):
+        # TODO: TEST
+        if voltage < 0.7:
+            GPIO.output(17, True)
+        else:
+            GPIO.output(17, False)
 
 if __name__ == "__main__":
     pass
