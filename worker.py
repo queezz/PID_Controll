@@ -106,11 +106,11 @@ class Worker(QtCore.QObject):
             currentTime = datetime.datetime.now()
             deltaSeconds = (currentTime - startTime).total_seconds()
 
-            # TODO: 実際のデータをとる, 計算
+            # TODO: measure data and calculate
             self.data[step] = [deltaSeconds, voltage]
 
             # TODO: PID Controll
-            self.__PIDControll()
+            self.__PIDControll(voltage)
 
             if step%9 == 0 and step!=0:
                 self.sigStep.emit(self.type, self.data)
