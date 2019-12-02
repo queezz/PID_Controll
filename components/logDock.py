@@ -6,7 +6,6 @@ class LogDock(Dock):
 
     def __init__(self):
         super().__init__("Log")
-        self.setStretch(360, 150)
 
         self.widget = pg.LayoutWidget()
 

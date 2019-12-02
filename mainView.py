@@ -1,13 +1,13 @@
 import sys
-sys.path.append("./components/")
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.dockarea import DockArea,Dock
 import numpy as np
 
-from controllDock import ControllDock
-from logDock import LogDock
-from graph import Graph
+from components.controllDock import ControllDock
+from components.logDock import LogDock
+from components.registerDock import RegisterDock
+from components.graph import Graph
 
 class UIWindow(object):
 
@@ -21,9 +21,10 @@ class UIWindow(object):
         self.plotDock = Dock("Plots", size=(300, 400))
         self.controllDock = ControllDock()
         self.logDock = LogDock()
+        self.registerDock = RegisterDock()
         self.graph = Graph()
 
-        self.MainWindow.setGeometry(100, 100, 1000, 900)
+        self.MainWindow.setGeometry(100, 100, 1024, 600)
         self.MainWindow.setObjectName("Monitor")
         self.MainWindow.setWindowTitle("Data Logger")
         self.MainWindow.statusBar().showMessage('')
@@ -37,7 +38,8 @@ class UIWindow(object):
 
         self.area.addDock(self.plotDock, "top")
         self.area.addDock(self.controllDock, "left")
-        self.area.addDock(self.logDock, "bottom")
+        self.area.addDock(self.logDock, "bottom", self.controllDock)
+        self.area.addDock(self.registerDock, "above", self.logDock)
 
         self.plotDock.addWidget(self.graph)
 

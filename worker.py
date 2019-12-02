@@ -21,13 +21,14 @@ class Worker(QtCore.QObject):
     sigDone = QtCore.pyqtSignal(int, str)
     sigMsg = QtCore.pyqtSignal(str)
 
-    def __init__(self, id: int, type: str, app: QtGui.QApplication):
+    def __init__(self, id: int, type: str, app: QtGui.QApplication, value: int):
         super().__init__()
         self.__id = id
-        self.type = type
+        self.__type = type
+        self.__temperature = value
         self.__app = app
         self.__abort = False
-        self.data = np.zeros(shape=(10, 2))
+        self.__data = np.zeros(shape=(10, 2))
 
     @QtCore.pyqtSlot()
     def work(self):
@@ -35,12 +36,12 @@ class Worker(QtCore.QObject):
         if TEST:
             self.__test()
         else:
-            if self.type == "Temperature":
+            if self.__type == "Temperature":
                 self.__temperature()
-            elif self.type == "Pressure1":
+            elif self.__type == "Pressure1":
                 self.__test()
                 pass
-            elif self.type == "Pressure2":
+            elif self.__type == "Pressure2":
                 self.__test()
                 pass
             else:
@@ -69,11 +70,11 @@ class Worker(QtCore.QObject):
             currentTime = datetime.datetime.now()
             deltaSeconds = (currentTime - startTime).total_seconds()
 
-            self.data[step] = [deltaSeconds, np.random.normal()*10]
+            self.__data[step] = [deltaSeconds, np.random.normal()]
 
             if step%9 == 0 and step!=0:
-                self.sigStep.emit(self.type, self.data)
-                self.data = np.zeros(shape=(10, 2))
+                self.sigStep.emit(self.__type, self.__data)
+                self.__data = np.zeros(shape=(10, 2))
                 step = 0
             else:
                 step += 1
@@ -82,18 +83,19 @@ class Worker(QtCore.QObject):
             self.__app.processEvents()
 
         else:
-            if self.data[step][0] == 0.0:
+            if self.__data[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.sigStep.emit(self.type, self.data[:step+1, :])
+                self.sigStep.emit(self.__type, self.__data[:step+1, :])
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
-        self.sigDone.emit(self.__id, self.type)
+        self.sigDone.emit(self.__id, self.__type)
         return
 
     @QtCore.pyqtSlot()
     def __temperature(self):
+        print(self.__temperature)
         aio = AIO.AIO_32_0RA_IRC(0x49, 0x3e)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(17, GPIO.OUT)
@@ -107,14 +109,14 @@ class Worker(QtCore.QObject):
             deltaSeconds = (currentTime - startTime).total_seconds()
 
             # TODO: measure data and calculate
-            self.data[step] = [deltaSeconds, voltage]
+            self.__data[step] = [deltaSeconds, voltage]
 
             # TODO: PID Controll
             self.__PIDControll(voltage)
 
             if step%9 == 0 and step!=0:
-                self.sigStep.emit(self.type, self.data)
-                self.data = np.zeros(shape=(10, 2))
+                self.sigStep.emit(self.__type, self.__data)
+                self.__data = np.zeros(shape=(10, 2))
                 step = 0
             else:
                 step += 1
@@ -123,15 +125,15 @@ class Worker(QtCore.QObject):
             self.__app.processEvents()
 
         else:
-            if self.data[step][0] == 0.0:
+            if self.__data[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.sigStep.emit(self.type, self.data[:step+1, :])
+                self.sigStep.emit(self.__type, self.__data[:step+1, :])
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
             GPIO.cleanup()
-        self.sigDone.emit(self.__id, self.type)
+        self.sigDone.emit(self.__id, self.__type)
         return
 
     def __PIDControll(self, voltage):
