@@ -7,15 +7,15 @@ from mainView import UIWindow
 from worker import Worker
 
 # debug
-def trap_exc_during_debug(*args):
-    print(args)
+# def trap_exc_during_debug(*args):
+#     print(args)
 
-sys.excepthook = trap_exc_during_debug
+# sys.excepthook = trap_exc_during_debug
 
 # must inherit QtCore.QObject in order to use 'connect'
 class MainWidget(QtCore.QObject, UIWindow):
     THREADS_NAME = ["Temperature", "Pressure1", "Pressure2"]
-    DEFAULT_TEMPERATURE = 1400
+    DEFAULT_TEMPERATURE = 700
 
     sigAbortWorkers = QtCore.pyqtSignal()
 
@@ -115,7 +115,7 @@ class MainWidget(QtCore.QObject, UIWindow):
             return
 
     def __setStepData(self, data: np.ndarray, xyResult: np.ndarray, type: str):
-        self.__save(xyResult, type)
+        # self.__save(xyResult, type)
         data = np.roll(data, -10)
         data = np.concatenate((data[:-10, :], np.array(xyResult)))
 

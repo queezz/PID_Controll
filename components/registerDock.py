@@ -10,7 +10,7 @@ class RegisterDock(Dock):
 
         self.registerLabel = QtGui.QLabel(self.__setLabelFont("Temperature: ", "#000001"))
         self.temperatureBw = QtGui.QTextBrowser()
-        self.temperatureBw.setMaximumHeight(45)
+        self.temperatureBw.setMaximumHeight(55)
         self.textField = QtGui.QSpinBox()
         self.textField.setMinimum(300)
         self.textField.setMaximum(99999)
