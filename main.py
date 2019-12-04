@@ -15,7 +15,7 @@ sys.excepthook = trap_exc_during_debug
 # must inherit QtCore.QObject in order to use 'connect'
 class MainWidget(QtCore.QObject, UIWindow):
     THREADS_NAME = ["Temperature", "Pressure1", "Pressure2"]
-    DEFAULT_TEMPERATURE = 1400
+    DEFAULT_TEMPERATURE = 700
 
     sigAbortWorkers = QtCore.pyqtSignal()
 
