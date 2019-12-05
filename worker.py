@@ -135,7 +135,7 @@ class Worker(QtCore.QObject):
 
     def __PIDControll(self, voltage):
         # TODO: TEST
-        if voltage < 0.7:
+        if voltage < 3.3:
             GPIO.output(17, True)
         else:
             GPIO.output(17, False)
