@@ -104,9 +104,10 @@ class Worker(QtCore.QObject):
             voltage = aio.analog_read_volt(0, aio.DataRate.DR_860SPS)
             currentTime = datetime.datetime.now()
             deltaSeconds = (currentTime - startTime).total_seconds()
+            temp = self.__calcTemperature(voltage)
 
             # TODO: measure data and calculate
-            self.__data[step] = [deltaSeconds, voltage]
+            self.__data[step] = [deltaSeconds, temp]
 
             # TODO: PID Controll
             self.__PIDControll(voltage)
@@ -139,6 +140,21 @@ class Worker(QtCore.QObject):
             GPIO.output(17, True)
         else:
             GPIO.output(17, False)
+
+    def __calcTemperature(self, voltage):   # type K: 試し
+        c1 = 2.508355 * (1e-2)
+        c2 = 7.860106 * (1e-8)
+        c3 = -2.503131 * (1e-10)
+        c4 = 8.315270 * (1e-14)
+        c5 = -1.228034 * (1e-17)
+        c6 = 9.804036 * (1e-22)
+        c7 = -4.413030 * (1e-26)
+        c8 = 1.057734 * (1e-30)
+        c9 = -1.052755 * (1e-35)
+
+        t = c1 * t + c2 * pow(t, 2) + c3*pow(t, 3) + c4*pow(t, 4) + c5*pow(t, 5) + c6*pow(t, 6) + c7*pow(t, 7) + 83*pow(t, 8) + c9*pow(t, 9)
+
+        return t
 
 if __name__ == "__main__":
     pass
