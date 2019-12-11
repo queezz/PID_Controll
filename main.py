@@ -1,12 +1,12 @@
 import sys
-from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
 import pandas as pd
+from pyqtgraph.Qt import QtCore, QtGui
 
 from mainView import UIWindow
 from worker import Worker
 
-# debug
+""" debug """
 # def trap_exc_during_debug(*args):
 #     print(args)
 

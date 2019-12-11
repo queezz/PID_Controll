@@ -1,8 +1,6 @@
-import time
-import datetime
-from pyqtgraph.Qt import QtCore, QtGui
+import time, datetime, math
 import numpy as np
-import math
+from pyqtgraph.Qt import QtCore, QtGui
 
 TEST = False
 try:

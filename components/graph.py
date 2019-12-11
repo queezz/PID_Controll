@@ -1,6 +1,7 @@
 import pyqtgraph as pg
 
 class Graph(pg.GraphicsLayoutWidget):
+
     def __init__(self):
         super().__init__()
         self.setObjectName("graph")
