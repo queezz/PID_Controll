@@ -17,10 +17,10 @@ class Worker(QtCore.QObject):
     sigDone = QtCore.pyqtSignal(int, str)
     sigMsg = QtCore.pyqtSignal(str)
 
-    def __init__(self, id: int, type: str, app: QtGui.QApplication, value: int):
+    def __init__(self, id: int, threadtype: str, app: QtGui.QApplication, value: int):
         super().__init__()
         self.__id = id
-        self.__type = type
+        self.__type = threadtype
         self.__temperature = value
         self.__app = app
         self.__abort = False

@@ -93,59 +93,59 @@ class MainWidget(QtCore.QObject, UIWindow):
             thread.start()
 
     @QtCore.pyqtSlot(str, np.ndarray)
-    def onWorkerStep(self, type: str, xyResult: np.ndarray):
+    def onWorkerStep(self, threadtype: str, xyResult: np.ndarray):
         txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(xyResult[-1][1])
 
-        if type == "Temperature":
+        if threadtype == "Temperature":
             self.controlDock.valueTBw.setText(txt)
-            self.tData = self.__setStepData(self.tData, xyResult, type)
+            self.tData = self.__setStepData(self.tData, xyResult, threadtype)
             self.valueTPlot.setData(self.tData[:, 0], self.tData[:, 1])
             return
-        elif type == "Pressure1":
+        elif threadtype == "Pressure1":
             self.controlDock.valueP1Bw.setText(txt)
-            self.p1Data = self.__setStepData(self.p1Data, xyResult, type)
+            self.p1Data = self.__setStepData(self.p1Data, xyResult, threadtype)
             self.valueP1Plot.setData(self.p1Data[:, 0], self.p1Data[:, 1])
             return
-        elif type == "Pressure2":
+        elif threadtype == "Pressure2":
             self.controlDock.valueP2Bw.setText(txt)
-            self.p2Data = self.__setStepData(self.p2Data, xyResult, type)
+            self.p2Data = self.__setStepData(self.p2Data, xyResult, threadtype)
             self.valueP2Plot.setData(self.p2Data[:, 0], self.p2Data[:, 1])
             return
         else:
             return
 
-    def __setStepData(self, data: np.ndarray, xyResult: np.ndarray, type: str):
-        # self.__save(xyResult, type)
+    def __setStepData(self, data: np.ndarray, xyResult: np.ndarray, threadtype: str):
+        # self.__save(xyResult, threadtype)
         data = np.roll(data, -10)
         data = np.concatenate((data[:-10, :], np.array(xyResult)))
 
         return data
 
-    def __save(self, data: np.ndarray, type: str):
+    def __save(self, data: np.ndarray, threadtype: str):
         df = pd.DataFrame(data)
         df.to_csv(
-            "./data/{}/out_{}.csv".format(type, self.__stepCount),
+            "./data/{}/out_{}.csv".format(threadtype, self.__stepCount),
             mode="a",
             header=False,
             index=False
         )
 
     @QtCore.pyqtSlot(int, str)
-    def onWorkerDone(self, workerId: int, type: str):
+    def onWorkerDone(self, workerId: int, threadtype: str):
         self.logDock.log.append("Worker #{} done".format(workerId))
         self.logDock.progress.append("-- Signal {} STOPPED".format(workerId))
         self.__workers_done += 1
 
-        if type == "Temperature":
+        if threadtype == "Temperature":
             self.tData = np.zeros(shape=(301, 2))
-        elif type == "Pressure1":
+        elif threadtype == "Pressure1":
             self.p1Data = np.zeros(shape=(301, 2))
-        elif type == "Pressure2":
+        elif threadtype == "Pressure2":
             self.p2Data = np.zeros(shape=(301, 2))
         else:
             return
 
-        self.controlDock.setStatus(type, False)
+        self.controlDock.setStatus(threadtype, False)
 
         if self.__workers_done == len(self.THREADS_NAME):
             # self.abortWorkers()   # not necessary
