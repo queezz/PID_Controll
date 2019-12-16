@@ -93,8 +93,8 @@ class MainWidget(QtCore.QObject, UIWindow):
             thread.start()
 
     @QtCore.pyqtSlot(str, np.ndarray)
-    def onWorkerStep(self, threadtype: str, xyResult: np.ndarray):
-        txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(xyResult[-1][1])
+    def onWorkerStep(self, threadtype: str, xyResult: np.ndarray, average: float):
+        txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(average)
 
         if threadtype == "Temperature":
             self.controlDock.valueTBw.setText(txt)
