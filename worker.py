@@ -92,7 +92,6 @@ class Worker(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def __plotTemperature(self):
-        print(self.__temperature)
         aio = AIO.AIO_32_0RA_IRC(0x49, 0x3e)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(17, GPIO.OUT)
@@ -103,19 +102,16 @@ class Worker(QtCore.QObject):
         controlStep = -1
         while not (self.__abort):
             time.sleep(0.01)
-            voltage = aio.analog_read_volt(0, aio.DataRate.DR_860SPS)
+            voltage = aio.analog_read_volt(0, aio.DataRate.DR_860SPS, pga=5)
             currentTime = datetime.datetime.now()
             deltaSeconds = (currentTime - startTime).total_seconds()
             temp = calcTemperature(voltage)
             aveTemp += temp
-
             self.__data[step] = [deltaSeconds, temp]
-            print(temp)
 
             if step%9 == 0 and step!=0:
                 aveTemp /= 10
-                self.__control(aveTemp, controlStep)
-
+                controlStep = self.__control(aveTemp, controlStep)
                 self.sigStep.emit(self.__type, self.__data, aveTemp)
                 self.__data = np.zeros(shape=(10, 2))
                 step = 0
@@ -123,14 +119,18 @@ class Worker(QtCore.QObject):
                 step += 1
             totalStep += 1
 
-            self.__app.processEvents()
+            if controlStep > 0:
+                GPIO.output(17, True)
+            else:
+                GPIO.output(17, False)
+            controlStep -= 1
 
+            self.__app.processEvents()
         else:
             if self.__data[step][0] == 0.0:
                 step -= 1
             if step > -1:
                 self.sigStep.emit(self.__type, self.__data[:step+1, :], self.__data[-1][-1])
-
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
@@ -140,14 +140,16 @@ class Worker(QtCore.QObject):
 
     def __control(self, aveTemp: float, steps: int):
         # TODO: test
-        print(aveTemp, steps)
-        if steps == -1:
-            # set control
-            pass
+        if steps <= 0:
+            d = self.__temperature - aveTemp
+            print(d)
+            if d <= 0:
+                return -1
+            else:
+                # TODO: set
+                return d*10
         else:
-            # steps--
-            pass
-
+            return steps
 
 if __name__ == "__main__":
     pass
