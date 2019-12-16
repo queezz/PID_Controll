@@ -15,7 +15,7 @@ from worker import Worker
 # must inherit QtCore.QObject in order to use 'connect'
 class MainWidget(QtCore.QObject, UIWindow):
     THREADS_NAME = ["Temperature", "Pressure1", "Pressure2"]
-    DEFAULT_TEMPERATURE = 700
+    DEFAULT_TEMPERATURE = 50
 
     sigAbortWorkers = QtCore.pyqtSignal()
 
