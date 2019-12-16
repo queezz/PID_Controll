@@ -1,5 +1,5 @@
 import math
-def calcTemperature(self, voltage):
+def calcTemperature(voltage):
         # V -> μV
         v = voltage * (1e6)
 
@@ -16,7 +16,7 @@ def calcTemperature(self, voltage):
             t -= jx
         return t
 
-def calcT(self, tm):
+def calcT(tm):
         i = 0
         j = 0
         a = [0]*10

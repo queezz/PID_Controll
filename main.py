@@ -92,7 +92,7 @@ class MainWidget(QtCore.QObject, UIWindow):
             thread.started.connect(worker.work)
             thread.start()
 
-    @QtCore.pyqtSlot(str, np.ndarray)
+    @QtCore.pyqtSlot(str, np.ndarray, float)
     def onWorkerStep(self, threadtype: str, xyResult: np.ndarray, ave: float):
         txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(ave)
 
