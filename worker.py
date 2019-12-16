@@ -143,11 +143,13 @@ class Worker(QtCore.QObject):
         if steps <= 0:
             d = self.__temperature - aveTemp
             print(d)
-            if d <= 0:
+            if d <= 0 and abs(d) <= 2:
                 return -1
+            elif d >= 10:
+                return int(d*10)
             else:
                 # TODO: set
-                return d*10
+                return int(d+1)
         else:
             return steps
 
