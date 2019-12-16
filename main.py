@@ -5,6 +5,7 @@ from pyqtgraph.Qt import QtCore, QtGui
 
 from mainView import UIWindow
 from worker import Worker
+from threadType import ThreadType
 
 """ debug """
 # def trap_exc_during_debug(*args):
@@ -115,10 +116,10 @@ class MainWidget(QtCore.QObject, UIWindow):
             return
 
     def __setStepData(self, data: np.ndarray, xyResult: np.ndarray, threadtype: str):
-        # self.__save(xyResult, threadtype)
+        if threadtype == "Temperature":
+            self.__save(xyResult, threadtype)
         data = np.roll(data, -10)
         data = np.concatenate((data[:-10, :], np.array(xyResult)))
-
         return data
 
     def __save(self, data: np.ndarray, threadtype: str):
