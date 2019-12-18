@@ -7,7 +7,7 @@ class Graph(pg.GraphicsLayoutWidget):
         self.setObjectName("graph")
 
         self.temperaturePl = self.addPlot()
-        self.temperaturePl.setLabel('left', "temperature", units='K')
+        self.temperaturePl.setLabel('left', "temperature", units='℃')
         self.temperaturePl.setLabel('bottom', "time", units='sec')
 
         self.pressurePl1 = self.addPlot(row=1, col=0)
