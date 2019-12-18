@@ -33,7 +33,7 @@ class RegisterDock(Dock):
         return txt
 
     def setTemperature(self, temperature: int):
-        self.temperatureBw.setText("""<font size = 6 color = "#d1451b">{} K</font>""".format(temperature))
+        self.temperatureBw.setText("""<font size = 6 color = "#d1451b">{} ℃</font>""".format(temperature))
         self.textField.setValue(temperature)
 
 if __name__ == "__main__":
