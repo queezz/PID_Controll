@@ -1,4 +1,5 @@
 import math
+
 def calcTemperature(voltage):
         # V -> μV
         v = voltage * (1e6)

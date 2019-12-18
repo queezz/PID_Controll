@@ -1,6 +1,7 @@
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui
 from pyqtgraph.dockarea import Dock
+from threadType import ThreadType
 
 class ControlDock(Dock):
 
@@ -58,17 +59,16 @@ class ControlDock(Dock):
 
         return "<font color={}><h3>{}</h3></font>".format(color, txt)
 
-    def setStatus(self, type: str, active: bool):
+    def setStatus(self, type: ThreadType, active: bool):
         txt = self.__setStatusFont(active)
-        if type=="Temperature":
+        if type == ThreadType.TEMPERATURE:
             self.temperatureStatus.setText(txt)
-        elif type=="Pressure1":
+        elif type == ThreadType.PRESSURE1:
             self.pressure1Status.setText(txt)
-        elif type=="Pressure2":
+        elif type == ThreadType.PRESSURE2:
             self.pressure2Status.setText(txt)
         else:
             return
-
 
 if __name__ == "__main__":
     pass

@@ -1,9 +1,9 @@
 from enum import Enum
 
 class ThreadType(Enum):
-    TEMPERATURE = 1
-    PRESSURE1 = 2
-    PRESSURE2 = 3
+    TEMPERATURE = "Temperature"
+    PRESSURE1 = "Pressure1"
+    PRESSURE2 = "Pressure2"
 
 if __name__=="__main__":
     pass
