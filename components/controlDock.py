@@ -1,7 +1,7 @@
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui
 from pyqtgraph.dockarea import Dock
-from threadType import ThreadType
+from customTypes import ThreadType
 
 class ControlDock(Dock):
 

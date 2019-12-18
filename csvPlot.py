@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-from threadType import ThreadType
+from customTypes import ThreadType
 
 def csvPlot(threadType: ThreadType):
     if threadType == ThreadType.TEMPERATURE:
