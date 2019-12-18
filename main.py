@@ -5,7 +5,8 @@ from pyqtgraph.Qt import QtCore, QtGui
 
 from mainView import UIWindow
 from worker import Worker
-from threadType import ThreadType
+from customTypes import ThreadType, ScaleSize
+from thermocouple import calcTemperature
 
 """ debug """
 # def trap_exc_during_debug(*args):
@@ -17,6 +18,7 @@ from threadType import ThreadType
 class MainWidget(QtCore.QObject, UIWindow):
     DEFAULT_TEMPERATURE = 50
     sigAbortWorkers = QtCore.pyqtSignal()
+    DEFAULT_DATA = np.array([[0, 0, DEFAULT_TEMPERATURE]])
 
     def __init__(self, app: QtGui.QApplication):
         super(self.__class__, self).__init__()
@@ -35,9 +37,9 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__threads = []
         self.__temperature = self.DEFAULT_TEMPERATURE
 
-        self.tData = np.zeros(shape=(301, 3))
-        self.p1Data = np.zeros(shape=(301, 3))
-        self.p2Data = np.zeros(shape=(301, 3))
+        self.tData = self.DEFAULT_DATA
+        self.p1Data = self.DEFAULT_DATA
+        self.p2Data = self.DEFAULT_DATA
 
         self.valueTPlot = self.graph.temperaturePl.plot(pen='#6ac600')
         self.valueP1Plot = self.graph.pressurePl1.plot(pen='#6ac600')
@@ -73,13 +75,13 @@ class MainWidget(QtCore.QObject, UIWindow):
             thread = QtCore.QThread()
             thread.setObjectName("thread_" + str(index))
             if tType == ThreadType.TEMPERATURE:
-                self.tWorker = Worker(index, tType, self.__app, now, self.__temperature)
+                self.tWorker = Worker(index, tType, self.__app, now, self.__temperature, ScaleSize.FULL)
                 self.setThread(self.tWorker, thread)
             elif tType == ThreadType.PRESSURE1:
-                self.p1Worker = Worker(index, tType, self.__app, now, self.__temperature)
+                self.p1Worker = Worker(index, tType, self.__app, now, self.__temperature, ScaleSize.SMALL)
                 self.setThread(self.p1Worker, thread)
             elif tType == ThreadType.PRESSURE2:
-                self.p2Worker = Worker(index, tType, self.__app, now, self.__temperature)
+                self.p2Worker = Worker(index, tType, self.__app, now, self.__temperature, ScaleSize.SMALL)
                 self.setThread(self.p2Worker, thread)
 
     def setThread(self, worker: Worker, thread: QtCore.QThread):
@@ -90,45 +92,47 @@ class MainWidget(QtCore.QObject, UIWindow):
         worker.sigDone.connect(self.onWorkerDone)
         worker.sigMsg.connect(self.logDock.log.append)
         self.sigAbortWorkers.connect(worker.abort)
+        ttype = worker.getThreadType()
 
-        df = pd.DataFrame(np.array([[0, 0, self.DEFAULT_TEMPERATURE]]))
+        df = pd.DataFrame(self.DEFAULT_DATA)
         df.to_csv(
-            "./data/{}/out_{}.csv".format(worker.threadType.value, self.__stepCount),
-            header=["Time", "{}".format(worker.threadType.value), "PresetTemperature"],
+            "./data/{}/out_{}.csv".format(ttype.value, self.__stepCount),
+            header=["Time", "{}".format(ttype.value), "PresetTemperature"],
             index=False
         )
-        self.controlDock.setStatus(worker.threadType, True)
+        self.controlDock.setStatus(ttype, True)
 
         thread.started.connect(worker.work)
         thread.start()
 
     @QtCore.pyqtSlot(np.ndarray, float, ThreadType)
     def onWorkerStep(self, result: np.ndarray, ave: float, threadtype: ThreadType):
+        if threadtype == ThreadType.TEMPERATURE:
+            ave = calcTemperature(ave)
         txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(ave)
 
         if threadtype == ThreadType.TEMPERATURE:
+            scale = self.tWorker.getScaleSize().value
             self.controlDock.valueTBw.setText(txt)
             self.tData = self.__setStepData(self.tData, result, threadtype)
-            self.valueTPlot.setData(self.tData[:, 0], self.tData[:, 1])
-            return
+            self.valueTPlot.setData(self.tData[scale:, 0], self.tData[scale:, 1])
         elif threadtype == ThreadType.PRESSURE1:
+            scale = self.p1Worker.getScaleSize().value
             self.controlDock.valueP1Bw.setText(txt)
             self.p1Data = self.__setStepData(self.p1Data, result, threadtype)
-            self.valueP1Plot.setData(self.p1Data[:, 0], self.p1Data[:, 1])
-            return
+            self.valueP1Plot.setData(self.p1Data[scale:, 0], self.p1Data[scale:, 1])
         elif threadtype == ThreadType.PRESSURE2:
+            scale = self.p2Worker.getScaleSize().value
             self.controlDock.valueP2Bw.setText(txt)
             self.p2Data = self.__setStepData(self.p2Data, result, threadtype)
-            self.valueP2Plot.setData(self.p2Data[:, 0], self.p2Data[:, 1])
-            return
+            self.valueP2Plot.setData(self.p2Data[scale:, 0], self.p2Data[scale:, 1])
         else:
             return
 
     def __setStepData(self, data: np.ndarray, result: np.ndarray, threadtype: ThreadType):
         if threadtype == ThreadType.TEMPERATURE:
             self.__save(result, threadtype)
-        data = np.roll(data, -10, axis=0)
-        data = np.concatenate((data[:-10, :], np.array(result)))
+        data = np.concatenate((data, np.array(result)))
         return data
 
     def __save(self, data: np.ndarray, threadtype: ThreadType):
@@ -147,11 +151,11 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__workers_done += 1
 
         if threadtype == ThreadType.TEMPERATURE:
-            self.tData = np.zeros(shape=(301, 3))
+            self.tData = self.DEFAULT_DATA
         elif threadtype == ThreadType.PRESSURE1:
-            self.p1Data = np.zeros(shape=(301, 3))
+            self.p1Data = self.DEFAULT_DATA
         elif threadtype == ThreadType.PRESSURE2:
-            self.p2Data = np.zeros(shape=(301, 3))
+            self.p2Data = self.DEFAULT_DATA
         else:
             return
 
@@ -176,9 +180,9 @@ class MainWidget(QtCore.QObject, UIWindow):
     @QtCore.pyqtSlot()
     def registerTemperature(self):
         value = self.registerDock.textField.value()
-        self.registerDock.setTemperature(value)
         self.__temperature = value
-        self.tWorker.temperature = self.__temperature
+        self.registerDock.setTemperature(self.__temperature)
+        self.tWorker.setPresetTemp(self.__temperature)
 
 if __name__ == "__main__":
     app = QtGui.QApplication([])

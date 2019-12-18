@@ -2,7 +2,7 @@ import time, datetime, math
 import numpy as np
 from pyqtgraph.Qt import QtCore, QtGui
 from thermocouple import calcTemperature
-from threadType import ThreadType
+from customTypes import ThreadType, ScaleSize
 
 TEST = False
 try:
@@ -19,16 +19,34 @@ class Worker(QtCore.QObject):
     sigDone = QtCore.pyqtSignal(int, ThreadType)
     sigMsg = QtCore.pyqtSignal(str)
 
-    def __init__(self, id: int, threadType: ThreadType, app: QtGui.QApplication, startTime: datetime, value: int):
+    def __init__(self, id: int, threadType: ThreadType, app: QtGui.QApplication, startTime: datetime, value: int, scale: ScaleSize):
         super().__init__()
         self.__id = id
-        self.threadType = threadType
-        self.presetTemp = value
+        self.__threadType = threadType
+        self.__presetTemp = value
+        self.__scaleSize = scale
         self.__startTime = startTime
         self.__app = app
         self.__abort = False
         self.__data = np.zeros(shape=(10, 3))
 
+    # MARK: - Getters
+    def getThreadType(self):
+        return self.__threadType
+
+    def getScaleSize(self):
+        return self.__scaleSize
+
+    # MARK: - Setters
+    def setScaleSize(self, scale: ScaleSize):
+        self.__scaleSize = scale
+        return
+
+    def setPresetTemp(self, newTemp: int):
+        self.__presetTemp = newTemp
+        return
+
+    # MARK: - Methodss
     @QtCore.pyqtSlot()
     def work(self):
         self.__setThread()
@@ -68,10 +86,10 @@ class Worker(QtCore.QObject):
             currentTime = datetime.datetime.now()
             deltaSeconds = (currentTime - self.__startTime).total_seconds()
 
-            self.__data[step] = [deltaSeconds, np.random.normal(), self.presetTemp]
+            self.__data[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
 
             if step%9 == 0 and step != 0:
-                self.sigStep.emit(self.__data, self.__data[-1][1], self.threadType)
+                self.sigStep.emit(self.__data, self.__data[-1][1], self.__threadType)
                 self.__data = np.zeros(shape=(10, 3))
                 step = 0
             else:
@@ -84,11 +102,11 @@ class Worker(QtCore.QObject):
             if self.__data[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.threadType)
+                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.__threadType)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
-        self.sigDone.emit(self.__id, self.threadType)
+        self.sigDone.emit(self.__id, self.__threadType)
         return
 
     @QtCore.pyqtSlot()
@@ -106,12 +124,12 @@ class Worker(QtCore.QObject):
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             temp = calcTemperature(voltage)
             aveTemp += temp
-            self.__data[step] = [deltaSeconds, temp, self.presetTemp]
+            self.__data[step] = [deltaSeconds, temp, self.__presetTemp]
 
             if step%9 == 0 and step != 0:
                 aveTemp /= 10
                 controlStep = self.__control(aveTemp, controlStep)
-                self.sigStep.emit(self.__data, aveTemp, self.threadType.value)
+                self.sigStep.emit(self.__data, aveTemp, self.__threadType)
                 self.__data = np.zeros(shape=(10, 3))
                 step = 0
             else:
@@ -129,7 +147,7 @@ class Worker(QtCore.QObject):
             if self.__data[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.threadType.value)
+                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.__threadType)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
@@ -139,7 +157,7 @@ class Worker(QtCore.QObject):
 
     def __control(self, aveTemp: float, steps: int):
         if steps <= 0:
-            d = self.presetTemp - aveTemp
+            d = self.__presetTemp - aveTemp
             if d <= 2:
                 return -1
             elif d >= 10:
