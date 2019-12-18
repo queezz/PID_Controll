@@ -19,10 +19,12 @@ class Worker(QtCore.QObject):
     sigDone = QtCore.pyqtSignal(int, ThreadType)
     sigMsg = QtCore.pyqtSignal(str)
 
-    def __init__(self, id: int, threadType: ThreadType, app: QtGui.QApplication, startTime: datetime, value: int, scale: ScaleSize):
+    def __init__(self):
         super().__init__()
+
+    def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication, startTime: datetime, value: int, scale: ScaleSize):
         self.__id = id
-        self.__threadType = threadType
+        self.__ttype = ttype
         self.__presetTemp = value
         self.__scaleSize = scale
         self.__startTime = startTime
@@ -32,7 +34,7 @@ class Worker(QtCore.QObject):
 
     # MARK: - Getters
     def getThreadType(self):
-        return self.__threadType
+        return self.__ttype
 
     def getScaleSize(self):
         return self.__scaleSize
@@ -53,12 +55,12 @@ class Worker(QtCore.QObject):
         if TEST:
             self.__test()
         else:
-            if self.threadType == ThreadType.TEMPERATURE:
+            if self.__ttype == ThreadType.TEMPERATURE:
                 self.__plotTemperature()
-            elif self.threadType == ThreadType.PRESSURE1:
+            elif self.__ttype == ThreadType.PRESSURE1:
                 self.__test()
                 pass
-            elif self.threadType == ThreadType.PRESSURE2:
+            elif self.__ttype == ThreadType.PRESSURE2:
                 self.__test()
                 pass
             else:
@@ -83,13 +85,11 @@ class Worker(QtCore.QObject):
         step = 0
         while not (self.__abort):
             time.sleep(0.01)
-            currentTime = datetime.datetime.now()
-            deltaSeconds = (currentTime - self.__startTime).total_seconds()
-
+            deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             self.__data[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
 
             if step%9 == 0 and step != 0:
-                self.sigStep.emit(self.__data, self.__data[-1][1], self.__threadType)
+                self.sigStep.emit(self.__data, self.__data[-1][1], self.__ttype)
                 self.__data = np.zeros(shape=(10, 3))
                 step = 0
             else:
@@ -102,11 +102,11 @@ class Worker(QtCore.QObject):
             if self.__data[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.__threadType)
+                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.__ttype)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
-        self.sigDone.emit(self.__id, self.__threadType)
+        self.sigDone.emit(self.__id, self.__ttype)
         return
 
     @QtCore.pyqtSlot()
@@ -129,17 +129,14 @@ class Worker(QtCore.QObject):
             if step%9 == 0 and step != 0:
                 aveTemp /= 10
                 controlStep = self.__control(aveTemp, controlStep)
-                self.sigStep.emit(self.__data, aveTemp, self.__threadType)
+                self.sigStep.emit(self.__data, aveTemp, self.__ttype)
                 self.__data = np.zeros(shape=(10, 3))
                 step = 0
             else:
                 step += 1
             totalStep += 1
 
-            if controlStep > 0:
-                GPIO.output(17, True)
-            else:
-                GPIO.output(17, False)
+            GPIO.output(17, controlStep > 0)
             controlStep -= 1
 
             self.__app.processEvents()
@@ -147,12 +144,12 @@ class Worker(QtCore.QObject):
             if self.__data[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.__threadType)
+                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.__ttype)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
             GPIO.cleanup()
-        self.sigDone.emit(self.__id, self.threadType)
+        self.sigDone.emit(self.__id, self.__ttype)
         return
 
     def __control(self, aveTemp: float, steps: int):

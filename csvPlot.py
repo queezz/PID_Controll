@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 
 from customTypes import ThreadType
 
-def csvPlot(threadType: ThreadType):
-    if threadType == ThreadType.TEMPERATURE:
+def csvPlot(ttype: ThreadType):
+    if ttype == ThreadType.TEMPERATURE:
         df = pd.read_csv("data/Temperature/out_1.csv")
         plt.plot(df["Time"], df["Temperature"])
         plt.show()
-    elif threadType == ThreadType.PRESSURE1:
+    elif ttype == ThreadType.PRESSURE1:
         pass
-    elif threadType == ThreadType.PRESSURE2:
+    elif ttype == ThreadType.PRESSURE2:
         pass
     else:
         return
