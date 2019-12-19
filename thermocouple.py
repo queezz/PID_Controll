@@ -1,6 +1,6 @@
 import math
 
-def calcTemperature(voltage):
+def calcTemp(voltage):
         # V -> μV
         v = voltage * (1e6)
 
@@ -12,12 +12,13 @@ def calcTemperature(voltage):
                 t += jx
                 if t>1372:
                     break
-                vta = calcT(t)
+                vta = calcElec(t)
                 kx = v-vta
             t -= jx
         return t
 
-def calcT(tm):
+#  calculate electromotive force
+def calcElec(tm):
         i = 0
         j = 0
         a = [0]*10

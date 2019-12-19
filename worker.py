@@ -1,7 +1,7 @@
 import time, datetime, math
 import numpy as np
 from pyqtgraph.Qt import QtCore, QtGui
-from thermocouple import calcTemperature
+from thermocouple import calcTemp
 from customTypes import ThreadType, ScaleSize
 
 TEST = False
@@ -89,7 +89,8 @@ class Worker(QtCore.QObject):
             self.__data[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
 
             if step%9 == 0 and step != 0:
-                self.sigStep.emit(self.__data, self.__data[-1][1], self.__ttype)
+                average = np.mean(self.__data[:, 1], dtype=float)
+                self.sigStep.emit(self.__data, average, self.__ttype)
                 self.__data = np.zeros(shape=(10, 3))
                 step = 0
             else:
@@ -122,12 +123,11 @@ class Worker(QtCore.QObject):
             time.sleep(0.02)
             voltage = aio.analog_read_volt(0, aio.DataRate.DR_860SPS, pga=5)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            temp = calcTemperature(voltage)
-            aveTemp += temp
-            self.__data[step] = [deltaSeconds, temp, self.__presetTemp]
+            temp = calcTemp(voltage)
+            self.__data[step] = [deltaSeconds, voltage, self.__presetTemp]
 
             if step%9 == 0 and step != 0:
-                aveTemp /= 10
+                aveTemp = np.mean(self.__data[:, 1], dtype=float)
                 controlStep = self.__control(aveTemp, controlStep)
                 self.sigStep.emit(self.__data, aveTemp, self.__ttype)
                 self.__data = np.zeros(shape=(10, 3))

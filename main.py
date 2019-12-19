@@ -6,7 +6,7 @@ from pyqtgraph.Qt import QtCore, QtGui
 from mainView import UIWindow
 from worker import Worker
 from customTypes import ThreadType, ScaleSize
-from thermocouple import calcTemperature
+from thermocouple import calcTemp
 
 """ debug """
 # def trap_exc_during_debug(*args):
@@ -129,7 +129,7 @@ class MainWidget(QtCore.QObject, UIWindow):
     @QtCore.pyqtSlot(np.ndarray, float, ThreadType)
     def onWorkerStep(self, result: np.ndarray, ave: float, ttype: ThreadType):
         if ttype == ThreadType.TEMPERATURE:
-            ave = calcTemperature(ave)
+            ave = calcTemp(ave)
         txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(ave)
 
         if ttype == ThreadType.TEMPERATURE:
