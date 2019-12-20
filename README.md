@@ -4,6 +4,7 @@
 ```
 - pyqtgraph
 - numpy
+- matplotlib
 - pandas
 - python3-smbus
 - RPi.GPIO
