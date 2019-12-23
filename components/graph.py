@@ -6,17 +6,22 @@ class Graph(pg.GraphicsLayoutWidget):
         super().__init__()
         self.setObjectName("graph")
 
-        self.temperaturePl = self.addPlot()
-        self.temperaturePl.setLabel('left', "temperature", units='℃')
-        self.temperaturePl.setLabel('bottom', "time", units='sec')
+        self.praPl = self.addPlot(row=0, col=0)
+        # TODO: 単位
+        self.praPl.setLabel('left', "prasma", units='mA')
+        self.praPl.setLabel('bottom', "time", units='sec')
 
-        self.pressurePl1 = self.addPlot(row=1, col=0)
-        self.pressurePl1.setLabel('left', "pressure1", units='Torr')
-        self.pressurePl1.setLabel('bottom', "time", units='sec')
+        self.tempPl = self.addPlot(row=1, col=0)
+        self.tempPl.setLabel('left', "temperature", units='℃')
+        self.tempPl.setLabel('bottom', "time", units='sec')
 
-        self.pressurePl2 = self.addPlot(row=2, col=0)
-        self.pressurePl2.setLabel('left', "pressure2", units='Torr')
-        self.pressurePl2.setLabel('bottom', "time", units='sec')
+        self.pres1Pl = self.addPlot(row=2, col=0)
+        self.pres1Pl.setLabel('left', "pressure1", units='Torr')
+        self.pres1Pl.setLabel('bottom', "time", units='sec')
+
+        self.pres2Pl = self.addPlot(row=3, col=0)
+        self.pres2Pl.setLabel('left', "pressure2", units='Torr')
+        self.pres2Pl.setLabel('bottom', "time", units='sec')
 
 if __name__ == '__main__':
     pass

@@ -1,6 +1,7 @@
 from enum import Enum
 
 class ThreadType(Enum):
+    PRASMA = "Prasma"
     TEMPERATURE = "Temperature"
     PRESSURE1 = "Pressure1"
     PRESSURE2 = "Pressure2"
@@ -8,11 +9,25 @@ class ThreadType(Enum):
     @classmethod
     def getEnum(cls, index: int):
         if index == 0:
-            return cls.TEMPERATURE
+            return cls.PRASMA
         elif index == 1:
-            return cls.PRESSURE1
+            return cls.TEMPERATURE
         elif index == 2:
+            return cls.PRESSURE1
+        elif index == 3:
             return cls.PRESSURE2
+        else:
+            return
+
+    def getIndex(self):
+        if self == self.PRASMA:
+            return 0
+        elif self == self.TEMPERATURE:
+            return 1
+        elif self == self.PRESSURE1:
+            return 2
+        elif self == self.PRESSURE2:
+            return 3
         else:
             return
 

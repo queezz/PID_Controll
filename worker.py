@@ -1,6 +1,7 @@
 import time, datetime, math
 import numpy as np
 from pyqtgraph.Qt import QtCore, QtGui
+from typing import Callable
 from thermocouple import calcTemp
 from customTypes import ThreadType, ScaleSize
 
@@ -15,7 +16,7 @@ except:
 # must inherit QtCore.QObject in order to use 'connect'
 class Worker(QtCore.QObject):
 
-    sigStep = QtCore.pyqtSignal(np.ndarray, float, ThreadType)
+    sigStep = QtCore.pyqtSignal(np.ndarray, np.ndarray, float, ThreadType)
     sigDone = QtCore.pyqtSignal(int, ThreadType)
     sigMsg = QtCore.pyqtSignal(str)
 
@@ -25,12 +26,13 @@ class Worker(QtCore.QObject):
     def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication, startTime: datetime, value: int, scale: ScaleSize):
         self.__id = id
         self.__ttype = ttype
-        self.__presetTemp = value
-        self.__scaleSize = scale
-        self.__startTime = startTime
         self.__app = app
         self.__abort = False
-        self.__data = np.zeros(shape=(10, 3))
+        self.__startTime = startTime
+        self.__presetTemp = value
+        self.__scaleSize = scale
+        self.__rawData = np.zeros(shape=(10, 3))
+        self.__calcData = np.zeros(shape=(10, 3))
 
     # MARK: - Getters
     def getThreadType(self):
@@ -48,29 +50,24 @@ class Worker(QtCore.QObject):
         self.__presetTemp = newTemp
         return
 
-    # MARK: - Methodss
+    # MARK: - Methods
     @QtCore.pyqtSlot()
     def work(self):
         self.__setThread()
         if TEST:
             self.__test()
         else:
-            if self.__ttype == ThreadType.TEMPERATURE:
-                self.__plotTemperature()
+            if self.__ttype == ThreadType.PRASMA:
+                self.__test()
+            elif self.__ttype == ThreadType.TEMPERATURE:
+                self.__plotTemp()
             elif self.__ttype == ThreadType.PRESSURE1:
                 self.__test()
-                pass
             elif self.__ttype == ThreadType.PRESSURE2:
                 self.__test()
-                pass
             else:
                 return
 
-    def abort(self):
-        self.sigMsg.emit("Worker #{} aborting acquisition".format(self.__id))
-        self.__abort = True
-
-    @QtCore.pyqtSlot()
     def __setThread(self):
         threadName = QtCore.QThread.currentThread().objectName()
         threadId = int(QtCore.QThread.currentThreadId())
@@ -80,79 +77,77 @@ class Worker(QtCore.QObject):
         )
 
     @QtCore.pyqtSlot()
-    def __test(self):
-        totalStep = 0
-        step = 0
-        while not (self.__abort):
-            time.sleep(0.01)
-            deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            self.__data[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
+    def abort(self):
+        self.sigMsg.emit("Worker #{} aborting acquisition".format(self.__id))
+        self.__abort = True
 
-            if step%9 == 0 and step != 0:
-                average = np.mean(self.__data[:, 1], dtype=float)
-                self.sigStep.emit(self.__data, average, self.__ttype)
-                self.__data = np.zeros(shape=(10, 3))
-                step = 0
-            else:
-                step += 1
-            totalStep += 1
+    # MARK: - Plot
+    def __plotPrasma(self):
+        # TODO: calcm pinId, control
+        self.__plot(3, self.__calcTest, self.__controlCur)
 
-            self.__app.processEvents()
+    def __plotTemp(self):
+        self.__plot(0, calcTemp, self.__controlTemp)
 
-        else:
-            if self.__data[step][0] == 0.0:
-                step -= 1
-            if step > -1:
-                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.__ttype)
-            self.sigMsg.emit(
-                "Worker #{} aborting work at step {}".format(self.__id, totalStep)
-            )
-        self.sigDone.emit(self.__id, self.__ttype)
-        return
+    def __plotPress1(self):
+        # TODO: calc, pinId
+        self.__plot(1, self.__calcTest)
 
-    @QtCore.pyqtSlot()
-    def __plotTemperature(self):
+    def __plotPress2(self):
+        # TODO: calc, pinId
+        self.__plot(2, self.__calcTest)
+
+    def __plot(self, pinId: int, calc: Callable[[float], float], control: Callable[[float, int], int]=None):
         aio = AIO.AIO_32_0RA_IRC(0x49, 0x3e)
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(17, GPIO.OUT)
+        if not control is None:
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(17, GPIO.OUT)
+            controlStep = -1
         totalStep = 0
         step = 0
-        aveTemp = 0
-        controlStep = -1
+        aveValue = 0
         while not (self.__abort):
             time.sleep(0.02)
-            voltage = aio.analog_read_volt(0, aio.DataRate.DR_860SPS, pga=5)
+            voltage = aio.analog_read_volt(pinId, aio.DataRate.DR_860SPS, pga=5)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            temp = calcTemp(voltage)
-            self.__data[step] = [deltaSeconds, voltage, self.__presetTemp]
+            value = calc(voltage)
+
+            self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
             if step%9 == 0 and step != 0:
-                aveTemp = np.mean(self.__data[:, 1], dtype=float)
-                controlStep = self.__control(aveTemp, controlStep)
-                self.sigStep.emit(self.__data, aveTemp, self.__ttype)
-                self.__data = np.zeros(shape=(10, 3))
+                aveValue = np.mean(self.__rawData[:, 1], dtype=float)
+                if not control is None:
+                    controlStep = control(aveValue, controlStep)
+                self.__calcData = np.array(list(map(lambda x: list(x[0], self.__calc(x[1]), x[2]), self.__rawData)))
+                self.sigStep.emit(self.__rawData, self.__calcData, calc(aveValue), self.__ttype)
+                self.__rawData = np.zeros(shape=(10, 3))
+                self.__calcData = np.zeros(shape=(10, 3))
                 step = 0
             else:
                 step += 1
             totalStep += 1
 
-            GPIO.output(17, controlStep > 0)
-            controlStep -= 1
+            if not control is None:
+                GPIO.output(17, controlStep > 0)
+                controlStep -= 1
 
             self.__app.processEvents()
         else:
-            if self.__data[step][0] == 0.0:
+            if self.__rawData[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.sigStep.emit(self.__data[:step+1, :], self.__data[step, 1], self.__ttype)
+                self.__calcData = np.array(list(map(lambda x: list(x[0], self.__calc(x[1]), x[2]), self.__rawData)))
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, calc(self.__rawData[step][1]), self.__ttype)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
-            GPIO.cleanup()
+            if not control is None:
+                GPIO.cleanup()
         self.sigDone.emit(self.__id, self.__ttype)
         return
 
-    def __control(self, aveTemp: float, steps: int):
+    # MARK: - Control
+    def __controlTemp(self, aveTemp: float, steps: int):
         if steps <= 0:
             d = self.__presetTemp - aveTemp
             if d <= 2:
@@ -163,6 +158,47 @@ class Worker(QtCore.QObject):
                 return int(d+1)
         else:
             return steps
+
+    def __controlCur(self, aveCur: float, steps: int):
+        pass
+
+    # MARK: - Test
+    def __test(self):
+        totalStep = 0
+        step = 0
+        while not (self.__abort):
+            time.sleep(0.01)
+            deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
+            self.__rawData[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
+
+            if step%9 == 0 and step != 0:
+                average = np.mean(self.__rawData[:, 1], dtype=float)
+                self.__calcData = np.array(list(map(lambda x: [x[0], self.__calcTest(x[1]), x[2]], self.__rawData)))
+                self.sigStep.emit(self.__rawData, self.__calcData, self.__calcTest(average), self.__ttype)
+                self.__rawData = np.zeros(shape=(10, 3))
+                self.__calcData = np.zeros(shape=(10, 3))
+                step = 0
+            else:
+                step += 1
+            totalStep += 1
+
+            self.__app.processEvents()
+
+        else:
+            if self.__rawData[step][0] == 0.0:
+                step -= 1
+            if step > -1:
+                self.__calcData = np.array(list(map(lambda x: [x[0], self.__calcTest(x[1]), x[2]], self.__rawData)))
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], self.__calcTest(self.__rawData[step][1]), self.__ttype)
+
+            self.sigMsg.emit(
+                "Worker #{} aborting work at step {}".format(self.__id, totalStep)
+            )
+        self.sigDone.emit(self.__id, self.__ttype)
+        return
+
+    def __calcTest(self, value: float):
+        return value * 3
 
 if __name__ == "__main__":
     pass

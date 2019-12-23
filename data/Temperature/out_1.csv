@@ -1,2 +1,2 @@
-Time,Temperature
-0.0,0.0
+Time,Temperature,PresetTemperature
+0,0,50

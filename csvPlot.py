@@ -1,20 +1,26 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
 from customTypes import ThreadType
 
-def csvPlot(ttype: ThreadType):
+def csvPlot(ttype: ThreadType, step: int):
+    plt.figure()
+    df = pd.read_csv("data/{}/out_{}.csv".format(ttype.value, step))
+    plt.title("{}_{}".format(ttype.value, step))
+    plt.xlabel("Time [s]")
+    plt.ylabel(setYLabel(ttype))
+    plt.plot(df["Time"], df[ttype.value])
+    plt.savefig('data/images/{}/out_{}.png'.format(ttype.value, step))
+
+def setYLabel(ttype: ThreadType):
+    unit = ""
     if ttype == ThreadType.TEMPERATURE:
-        df = pd.read_csv("data/Temperature/out_1.csv")
-        plt.plot(df["Time"], df["Temperature"])
-        plt.show()
-    elif ttype == ThreadType.PRESSURE1:
-        pass
-    elif ttype == ThreadType.PRESSURE2:
-        pass
+        unit = " [℃]"
+    elif ttype == ThreadType.PRESSURE1 or ttype == ThreadType.PRESSURE2:
+        unit = " [Torr]"
     else:
-        return
+        return ""
+    return ttype.value + unit
 
 if __name__ == "__main__":
-    csvPlot(ThreadType.TEMPERATURE)
+    pass
