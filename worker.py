@@ -58,13 +58,13 @@ class Worker(QtCore.QObject):
             self.__test()
         else:
             if self.__ttype == ThreadType.PRASMA:
-                self.__plotPrasma
+                self.__test()
             elif self.__ttype == ThreadType.TEMPERATURE:
                 self.__plotTemp()
             elif self.__ttype == ThreadType.PRESSURE1:
-                self.__plotPress1
+                self.__test()
             elif self.__ttype == ThreadType.PRESSURE2:
-                self.__plotPress2
+                self.__test()
             else:
                 return
 
