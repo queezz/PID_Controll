@@ -2,6 +2,7 @@ import sys, datetime
 import numpy as np
 import pandas as pd
 from pyqtgraph.Qt import QtCore, QtGui
+from typing import Callable
 
 from mainView import UIWindow
 from worker import Worker
@@ -17,31 +18,34 @@ from thermocouple import calcTemp
 # must inherit QtCore.QObject in order to use 'connect'
 class MainWidget(QtCore.QObject, UIWindow):
     DEFAULT_TEMPERATURE = 50
-    sigAbortWorkers = QtCore.pyqtSignal()
     DEFAULT_DATA = np.array([[0, 0, DEFAULT_TEMPERATURE]])
+    sigAbortWorkers = QtCore.pyqtSignal()
 
     def __init__(self, app: QtGui.QApplication):
         super(self.__class__, self).__init__()
         self.__app = app
         self.__setConnects()
         self.controlDock.stopBtn.setDisabled(True)
-        self.registerDock.setTemperature(self.DEFAULT_TEMPERATURE)
+        self.registerDock.setTemp(self.DEFAULT_TEMPERATURE)
 
         QtCore.QThread.currentThread().setObjectName("main")
 
         self.__workers_done = 0
         self.__stepCount = 0
         self.__threads = []
-        self.__temperature = self.DEFAULT_TEMPERATURE
+        self.__temp = self.DEFAULT_TEMPERATURE
 
+        self.praData = self.DEFAULT_DATA
         self.tData = self.DEFAULT_DATA
         self.p1Data = self.DEFAULT_DATA
         self.p2Data = self.DEFAULT_DATA
 
-        self.valueTPlot = self.graph.temperaturePl.plot(pen='#6ac600')
-        self.valueP1Plot = self.graph.pressurePl1.plot(pen='#6ac600')
-        self.valueP2Plot = self.graph.pressurePl2.plot(pen='#6ac600')
+        self.valuePraPlot = self.graph.praPl.plot(pen='#6ac600')
+        self.valueTPlot = self.graph.tempPl.plot(pen='#6ac600')
+        self.valueP1Plot = self.graph.pres1Pl.plot(pen='#6ac600')
+        self.valueP2Plot = self.graph.pres2Pl.plot(pen='#6ac600')
 
+        self.prasmaWorker = None
         self.tWorker = None
         self.p1Worker = None
         self.p2Worker = None
@@ -50,7 +54,10 @@ class MainWidget(QtCore.QObject, UIWindow):
 
     def __setConnects(self):
         self.controlDock.startBtn.clicked.connect(self.startThreads)
-        self.controlDock.stopBtn.clicked.connect(self.abortWorkers)
+        self.controlDock.stopBtn.clicked.connect(self.abortThreads)
+        self.controlDock.praScaleBtns.selectBtn.activated.connect(
+            lambda: self.setScale(self.controlDock.praScaleBtns.selectBtn.currentIndex(), ThreadType.PRASMA)
+        )
         self.controlDock.tScaleBtns.selectBtn.activated.connect(
             lambda: self.setScale(self.controlDock.tScaleBtns.selectBtn.currentIndex(), ThreadType.TEMPERATURE)
         )
@@ -60,10 +67,11 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.controlDock.p2ScaleBtns.selectBtn.activated.connect(
             lambda: self.setScale(self.controlDock.p2ScaleBtns.selectBtn.currentIndex(), ThreadType.PRESSURE2)
         )
-        self.registerDock.registerBtn.clicked.connect(self.registerTemperature)
+        self.registerDock.registerBtn.clicked.connect(self.registerTemp)
 
+    # MARK: - Threads
     def startThreads(self):
-        self.logDock.log.append("starting {} threads".format(len(ThreadType)))
+        self.logDock.log.append("starting {} threads".format(len(ThreadType)-1))
 
         self.controlDock.startBtn.setDisabled(True)
         self.controlDock.stopBtn.setEnabled(True)
@@ -71,29 +79,29 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__workers_done = 0
         self.__stepCount += 1
 
-        try:
-            for thread, worker in self.__threads:
-                thread.quit()
-                thread.wait()
-        except:
-            pass
+        for thread, worker in self.__threads:
+            thread.quit()
+            thread.wait()
 
         self.__threads = []
+        self.prasmaWorker = Worker()
         self.tWorker = Worker()
         self.p1Worker = Worker()
         self.p2Worker = Worker()
 
         now = datetime.datetime.now()
 
-        for index, worker in enumerate([self.tWorker, self.p1Worker, self.p2Worker]):
+        for index, worker in enumerate([self.prasmaWorker, self.tWorker, self.p1Worker, self.p2Worker]):
             thread = QtCore.QThread()
-            thread.setObjectName("thread_" + str(index))
+            thread.setObjectName("thread_{}".format(index))
 
             if index == 0:
-                scaleButtons = self.controlDock.tScaleBtns
+                scaleButtons = self.controlDock.praScaleBtns
             elif index == 1:
-                scaleButtons = self.controlDock.p1ScaleBtns
+                scaleButtons = self.controlDock.tScaleBtns
             elif index == 2:
+                scaleButtons = self.controlDock.p1ScaleBtns
+            elif index == 3:
                 scaleButtons = self.controlDock.p2ScaleBtns
             else:
                 return
@@ -102,7 +110,7 @@ class MainWidget(QtCore.QObject, UIWindow):
             scale = ScaleSize.getEnum(scaleIndex)
             ttype = ThreadType.getEnum(index)
 
-            worker.setWorker(index, ttype, self.__app, now, self.__temperature, scale)
+            worker.setWorker(index, ttype, self.__app, now, self.__temp, scale)
             self.setThread(worker, thread)
 
     def setThread(self, worker: Worker, thread: QtCore.QThread):
@@ -126,34 +134,32 @@ class MainWidget(QtCore.QObject, UIWindow):
         thread.started.connect(worker.work)
         thread.start()
 
-    @QtCore.pyqtSlot(np.ndarray, float, ThreadType)
-    def onWorkerStep(self, result: np.ndarray, ave: float, ttype: ThreadType):
-        if ttype == ThreadType.TEMPERATURE:
-            ave = calcTemp(ave)
-        txt = """<font size = 20 color = "#d1451b">{:.2f}</font>""".format(ave)
+    @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType)
+    def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray, ave: float, ttype: ThreadType):
+        self.controlDock.setBwtext(ttype, ave)
 
-        if ttype == ThreadType.TEMPERATURE:
-            scale = self.tWorker.getScaleSize().value
-            self.controlDock.valueTBw.setText(txt)
-            self.tData = self.__setStepData(self.tData, result, ttype)
-            self.valueTPlot.setData(self.tData[scale:, 0], self.tData[scale:, 1])
+        worker = self.getWorker(ttype)
+        scale = worker.getScaleSize().value
+
+        data = self.getData(ttype)
+        data = self.__setStepData(data, rawResult, calcResult, ttype)
+        self.setData(ttype, data)
+
+        if ttype == ThreadType.PRASMA:
+            self.valuePraPlot.setData(data[scale:, 0], data[scale:, 1])
+        elif ttype == ThreadType.TEMPERATURE:
+            self.valueTPlot.setData(data[scale:, 0], data[scale:, 1])
         elif ttype == ThreadType.PRESSURE1:
-            scale = self.p1Worker.getScaleSize().value
-            self.controlDock.valueP1Bw.setText(txt)
-            self.p1Data = self.__setStepData(self.p1Data, result, ttype)
-            self.valueP1Plot.setData(self.p1Data[scale:, 0], self.p1Data[scale:, 1])
+            self.valueP1Plot.setData(data[scale:, 0], data[scale:, 1])
         elif ttype == ThreadType.PRESSURE2:
-            scale = self.p2Worker.getScaleSize().value
-            self.controlDock.valueP2Bw.setText(txt)
-            self.p2Data = self.__setStepData(self.p2Data, result, ttype)
-            self.valueP2Plot.setData(self.p2Data[scale:, 0], self.p2Data[scale:, 1])
+            self.valueP2Plot.setData(data[scale:, 0], data[scale:, 1])
         else:
             return
 
-    def __setStepData(self, data: np.ndarray, result: np.ndarray, ttype: ThreadType):
+    def __setStepData(self, data: np.ndarray, rawResult: np.ndarray, calcResult: np.ndarray, ttype: ThreadType):
         if ttype == ThreadType.TEMPERATURE:
-            self.__save(result, ttype)
-        data = np.concatenate((data, np.array(result)))
+            self.__save(rawResult, ttype)
+        data = np.concatenate((data, np.array(calcResult)))
         return data
 
     def __save(self, data: np.ndarray, ttype: ThreadType):
@@ -170,26 +176,18 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.logDock.log.append("Worker #{} done".format(workerId))
         self.logDock.progress.append("-- Signal {} STOPPED".format(workerId))
         self.__workers_done += 1
-
-        if ttype == ThreadType.TEMPERATURE:
-            self.tData = self.DEFAULT_DATA
-        elif ttype == ThreadType.PRESSURE1:
-            self.p1Data = self.DEFAULT_DATA
-        elif ttype == ThreadType.PRESSURE2:
-            self.p2Data = self.DEFAULT_DATA
-        else:
-            return
+        self.setData(ttype, self.DEFAULT_DATA)
 
         self.controlDock.setStatus(ttype, False)
 
         if self.__workers_done == len(ThreadType):
-            # self.abortWorkers()   # not necessary
-            self.logDock.log.append("No more workers active")
+            # self.abortPlotThreads()   # not necessary
+            self.logDock.log.append("No more plot workers active")
             self.controlDock.startBtn.setEnabled(True)
             self.controlDock.stopBtn.setDisabled(True)
 
     @QtCore.pyqtSlot()
-    def abortWorkers(self):
+    def abortThreads(self):
         self.sigAbortWorkers.emit()
         self.logDock.log.append("Asking each worker to abort")
         for thread, worker in self.__threads:
@@ -198,25 +196,57 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         self.logDock.log.append("All threads exited")
 
+    # MARK: - Methods
     @QtCore.pyqtSlot()
-    def registerTemperature(self):
+    def registerTemp(self):
         value = self.registerDock.textField.value()
-        self.__temperature = value
-        self.registerDock.setTemperature(self.__temperature)
-        self.tWorker.setPresetTemp(self.__temperature)
-        self.p1Worker.setPresetTemp(self.__temperature)
-        self.p2Worker.setPresetTemp(self.__temperature)
+        self.__temp = value
+        self.registerDock.setTemp(self.__temp)
+        self.prasmaWorker.setPresetTemp(self.__temp)
+        self.tWorker.setPresetTemp(self.__temp)
+        self.p1Worker.setPresetTemp(self.__temp)
+        self.p2Worker.setPresetTemp(self.__temp)
 
     def setScale(self, index: int, ttype: ThreadType):
         scale = ScaleSize.getEnum(index)
+        worker = self.getWorker(ttype)
+        worker.setScaleSize(scale)
+
+    def getWorker(self, ttype: ThreadType):
         if self.tWorker is None:
             return
-        if ttype == ThreadType.TEMPERATURE:
-            self.tWorker.setScaleSize(scale)
+        elif ttype == ThreadType.PRASMA:
+            return self.prasmaWorker
+        elif ttype == ThreadType.TEMPERATURE:
+            return self.tWorker
         elif ttype == ThreadType.PRESSURE1:
-            self.p1Worker.setScaleSize(scale)
+            return self.p1Worker
         elif ttype == ThreadType.PRESSURE2:
-            self.p2Worker.setScaleSize(scale)
+            return self.p2Worker
+        else:
+            return
+
+    def getData(self, ttype: ThreadType):
+        if ttype == ThreadType.PRASMA:
+            return self.praData
+        elif ttype == ThreadType.TEMPERATURE:
+            return self.tData
+        elif ttype == ThreadType.PRESSURE1:
+            return self.p1Data
+        elif ttype == ThreadType.PRESSURE2:
+            return self.p2Data
+        else:
+            return
+
+    def setData(self, ttype: ThreadType, data: np.ndarray):
+        if ttype == ThreadType.PRASMA:
+            self.praData = data
+        elif ttype == ThreadType.TEMPERATURE:
+            self.tData = data
+        elif ttype == ThreadType.PRESSURE1:
+            self.p1Data = data
+        elif ttype == ThreadType.PRESSURE2:
+            self.p2Data = data
         else:
             return
 
