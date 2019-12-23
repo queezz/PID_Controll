@@ -8,6 +8,7 @@ from mainView import UIWindow
 from worker import Worker
 from customTypes import ThreadType, ScaleSize
 from thermocouple import calcTemp
+from csvPlot import csvPlot
 
 """ debug """
 # def trap_exc_during_debug(*args):
@@ -179,6 +180,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.setData(ttype, self.DEFAULT_DATA)
 
         self.controlDock.setStatus(ttype, False)
+        csvPlot(ttype, self.__stepCount)
 
         if self.__workers_done == len(ThreadType):
             # self.abortPlotThreads()   # not necessary
