@@ -84,7 +84,7 @@ class Worker(QtCore.QObject):
     # MARK: - Plot
     def __plotPrasma(self):
         # TODO: calcm pinId, control
-        self.__plot(3, self.__calcTest, self.__controlTemp)
+        self.__plot(3, self.__calcTest, self.__controlCur)
 
     def __plotTemp(self):
         self.__plot(0, calcTemp, self.__controlTemp)
@@ -158,6 +158,9 @@ class Worker(QtCore.QObject):
                 return int(d+1)
         else:
             return steps
+
+    def __controlCur(self, aveCur: float, steps: int):
+        pass
 
     # MARK: - Test
     def __test(self):
