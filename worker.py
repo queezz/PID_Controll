@@ -83,21 +83,21 @@ class Worker(QtCore.QObject):
 
     # MARK: - Plot
     def __plotPrasma(self):
-        # TODO: calc, pinId(plus, minus), control
-        self.__plot(3, 4, self.__calcTest, self.__controlCur)
+        # TODO: calc, pinId, control
+        self.__plot(3, self.__calcTest, self.__controlCur)
 
     def __plotTemp(self):
-        self.__plot(0, 17, AIO.AIO_32_0RA_IRC.PGA.PGA_1_2544V, calcTemp, self.__controlTemp)
+        self.__plot(0, AIO.AIO_32_0RA_IRC.PGA.PGA_1_2544V, calcTemp, self.__controlTemp)
 
     def __plotPress1(self):
         # TODO: calc
-        self.__plot(1, 18, AIO.AIO_32_0RA_IRC.PGA.PGA_10_0352V, self.__calcTest)
+        self.__plot(15, AIO.AIO_32_0RA_IRC.PGA.PGA_10_0352V, self.__calcTest)
 
     def __plotPress2(self):
         # TODO: calc, pinId
-        self.__plot(2, 5, self.__calcTest)
+        self.__plot(2, self.__calcTest)
 
-    def __plot(self, pId: int, mId: int, fscale: int, calc: Callable[[float], float], control: Callable[[float, int], int]=None):
+    def __plot(self, pId: int, fscale: int, calc: Callable[[float], float], control: Callable[[float, int], int]=None):
         aio = AIO.AIO_32_0RA_IRC(0x49, 0x3e)
         if not control is None:
             GPIO.setmode(GPIO.BCM)
@@ -108,11 +108,7 @@ class Worker(QtCore.QObject):
         aveValue = 0
         while not (self.__abort):
             time.sleep(0.02)
-            pvl = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
-            mvl = aio.analog_read_volt(mId, aio.DataRate.DR_860SPS, pga=fscale)
-            print("{}: {}".format(pId, pvl))
-            print("{}: {}".format(mId, mvl))
-            voltage = pvl-mvl
+            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_475SPS, pga=fscale)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             value = calc(voltage)
 
