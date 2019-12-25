@@ -62,7 +62,7 @@ class Worker(QtCore.QObject):
             elif self.__ttype == ThreadType.TEMPERATURE:
                 self.__plotTemp()
             elif self.__ttype == ThreadType.PRESSURE1:
-                self.__test()
+                self.__plotPress1()
             elif self.__ttype == ThreadType.PRESSURE2:
                 self.__test()
             else:
@@ -90,7 +90,7 @@ class Worker(QtCore.QObject):
         self.__plot(0, calcTemp, self.__controlTemp)
 
     def __plotPress1(self):
-        # TODO: calc, pinId
+        # TODO: calc
         self.__plot(1, self.__calcTest)
 
     def __plotPress2(self):
