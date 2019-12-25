@@ -31,6 +31,16 @@ class ThreadType(Enum):
         else:
             return
 
+    def getUnit(self):
+        if self == self.PRASMA:
+            return "mA"
+        elif self == self.TEMPERATURE:
+            return "℃"
+        elif self == self.PRESSURE1 or self == self.PRESSURE2:
+            return "Torr"
+        else:
+            return ""
+
 class ScaleSize(Enum):
     SMALL = -400
     MEDIUM = -1000

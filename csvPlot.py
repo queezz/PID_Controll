@@ -13,13 +13,7 @@ def csvPlot(ttype: ThreadType, step: int):
     plt.savefig('data/images/{}/out_{}.png'.format(ttype.value, step))
 
 def setYLabel(ttype: ThreadType):
-    unit = ""
-    if ttype == ThreadType.TEMPERATURE:
-        unit = " [℃]"
-    elif ttype == ThreadType.PRESSURE1 or ttype == ThreadType.PRESSURE2:
-        unit = " [Torr]"
-    else:
-        return ""
+    unit = ttype.getUnit()
     return ttype.value + unit
 
 if __name__ == "__main__":
