@@ -87,11 +87,11 @@ class Worker(QtCore.QObject):
         self.__plot(3, self.__calcTest, self.__controlCur)
 
     def __plotTemp(self):
-        self.__plot(0, AIO.AIO_32_0RA_IRC.PGA.PGA_1_2544V, calcTemp, self.__controlTemp)
+        self.__plot(0, 5, calcTemp, self.__controlTemp)
 
     def __plotPress1(self):
         # TODO: calc
-        self.__plot(15, AIO.AIO_32_0RA_IRC.PGA.PGA_10_0352V, self.__calcTest)
+        self.__plot(15, 2, self.__calcTest)
 
     def __plotPress2(self):
         # TODO: calc, pinId
@@ -108,9 +108,10 @@ class Worker(QtCore.QObject):
         aveValue = 0
         while not (self.__abort):
             time.sleep(0.02)
-            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_475SPS, pga=fscale)
+            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             value = calc(voltage)
+            aio.analog_read_volt(15, aio.DataRate.DR_860SPS, pga=2)
 
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
@@ -198,7 +199,7 @@ class Worker(QtCore.QObject):
         return
 
     def __calcTest(self, value: float):
-        return value * 3
+        return value
 
 if __name__ == "__main__":
     pass
