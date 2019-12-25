@@ -177,10 +177,10 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.logDock.log.append("Worker #{} done".format(workerId))
         self.logDock.progress.append("-- Signal {} STOPPED".format(workerId))
         self.__workers_done += 1
-        self.setData(ttype, self.DEFAULT_DATA)
-
         self.controlDock.setStatus(ttype, False)
         csvPlot(ttype, self.__stepCount)
+
+        self.setData(ttype, self.DEFAULT_DATA)
 
         if self.__workers_done == len(ThreadType):
             # self.abortPlotThreads()   # not necessary
