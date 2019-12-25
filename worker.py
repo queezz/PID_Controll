@@ -118,7 +118,7 @@ class Worker(QtCore.QObject):
                 aveValue = np.mean(self.__rawData[:, 1], dtype=float)
                 if not control is None:
                     controlStep = control(aveValue, controlStep)
-                self.__calcData = np.array(list(map(lambda x: list(x[0], self.__calc(x[1]), x[2]), self.__rawData)))
+                self.__calcData = np.array(list(map(lambda x: [x[0], calc(x[1]), x[2]], self.__rawData)))
                 self.sigStep.emit(self.__rawData, self.__calcData, calc(aveValue), self.__ttype)
                 self.__rawData = np.zeros(shape=(10, 3))
                 self.__calcData = np.zeros(shape=(10, 3))
@@ -136,7 +136,7 @@ class Worker(QtCore.QObject):
             if self.__rawData[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.__calcData = np.array(list(map(lambda x: list(x[0], self.__calc(x[1]), x[2]), self.__rawData)))
+                self.__calcData = np.array(list(map(lambda x: [x[0], calc(x[1]), x[2]], self.__rawData)))
                 self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, calc(self.__rawData[step][1]), self.__ttype)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
