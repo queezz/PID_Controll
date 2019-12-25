@@ -108,7 +108,11 @@ class Worker(QtCore.QObject):
         aveValue = 0
         while not (self.__abort):
             time.sleep(0.02)
-            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=5) - aio.analog_read_volt(mId, aio.DataRate.DR_860SPS, pga=5)
+            pvl = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=5)
+            mvl = aio.analog_read_volt(mId, aio.DataRate.DR_860SPS, pga=5)
+            print("{}: {}".format(pId, pvl))
+            print("{}: {}".format(mId, mvl))
+            voltage = pvl-mvl
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             value = calc(voltage)
 
