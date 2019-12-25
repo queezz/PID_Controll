@@ -14,7 +14,7 @@ def csvPlot(ttype: ThreadType, step: int):
 
 def setYLabel(ttype: ThreadType):
     unit = ttype.getUnit()
-    return ttype.value + unit
+    return "{} [{}]".format(ttype.value, unit)
 
 if __name__ == "__main__":
     pass

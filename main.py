@@ -72,7 +72,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
     # MARK: - Threads
     def startThreads(self):
-        self.logDock.log.append("starting {} threads".format(len(ThreadType)-1))
+        self.logDock.log.append("starting {} threads".format(len(ThreadType)))
 
         self.controlDock.startBtn.setDisabled(True)
         self.controlDock.stopBtn.setEnabled(True)
