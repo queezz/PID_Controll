@@ -83,7 +83,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         # self.prasmaWorker = Worker()
         self.tWorker = Worker()
         self.p1Worker = Worker()
-        # self.p2Worker = Worker()
+        self.p2Worker = Worker()
 
         now = datetime.datetime.now()
 

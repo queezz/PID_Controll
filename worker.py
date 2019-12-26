@@ -66,7 +66,7 @@ class Worker(QtCore.QObject):
             elif self.__ttype == ThreadType.PRESSURE1:
                 self.__plotPress1()
             elif self.__ttype == ThreadType.PRESSURE2:
-                self.__test()
+                self.__plotPress2()
             else:
                 return
 
@@ -114,7 +114,8 @@ class Worker(QtCore.QObject):
 
             #  I do not know why this is needed
             aio.analog_read_volt(15, aio.DataRate.DR_860SPS, pga=2)
-
+            aio.analog_read_volt(16, aio.DataRate.DR_860SPS, pga=2)
+            
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
             if step%9 == 0 and step != 0:
