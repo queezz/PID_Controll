@@ -94,6 +94,19 @@ class AIO_32_0RA_IRC:
         PGA_2_5088V = ADS1115.PGA.PGA_0_512V
         PGA_1_2544V = ADS1115.PGA.PGA_0_256V
 
+        @classmethod
+        def getLimit(cls, id: int):
+            if id == cls.PGA_10_0352V:
+                return 10.0
+            elif id == cls.PGA_5_0176V:
+                return 5.0
+            elif id == cls.PGA_2_5088V:
+                return 2.5
+            elif id == cls.PGA_1_2544V:
+                return 1.25
+            else:
+                return
+
     class DataRate:
         DR_8SPS = ADS1115.DataRate.DR_8SPS
         DR_16SPS = ADS1115.DataRate.DR_16SPS
