@@ -107,15 +107,14 @@ class Worker(QtCore.QObject):
         totalStep = 0
         step = 0
         while not (self.__abort):
-            time.sleep(0.05)
-            # TODO: datarate確認
-            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_475SPS, pga=fscale)
+            time.sleep(0.07)
+            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             value = self.__ttype.getCalcValue(voltage)
 
-            # TODO: 確認
-            # aio.analog_read_volt(15, aio.DataRate.DR_475SPS, pga=2)
+            #  I do not know why this is needed
+            aio.analog_read_volt(15, aio.DataRate.DR_860SPS, pga=2)
 
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
@@ -144,7 +143,7 @@ class Worker(QtCore.QObject):
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
                 aveValue = np.mean(self.__rawData[:step+1, 1], dtype=float)
                 aveValue = self.__ttype.getCalcValue(aveValue)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, aveValue, self.__ttype, totalStep+1, self.__startTime)
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, aveValue, self.__ttype, -1, self.__startTime)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
@@ -175,7 +174,7 @@ class Worker(QtCore.QObject):
         totalStep = 0
         step = 0
         while not (self.__abort):
-            time.sleep(0.05)
+            time.sleep(0.07)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             self.__rawData[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
 
@@ -200,7 +199,7 @@ class Worker(QtCore.QObject):
                 aveValue = np.mean(self.__rawData[:step+1, 1], dtype=float)
                 aveValue = self.__ttype.getCalcValue(aveValue)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], aveValue, self.__ttype, totalStep+1, self.__startTime)
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], aveValue, self.__ttype, -1, self.__startTime)
 
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)

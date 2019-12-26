@@ -155,7 +155,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
     def __setStepData(self, data: np.ndarray, rawResult: np.ndarray, calcResult: np.ndarray, ttype: ThreadType, step: int, startTime: datetime.datetime):
         # TODO: 確認
-        if step % 10000 == 0 and (ttype == ThreadType.PRESSURE1 or ttype == ThreadType.TEMPERATURE):
+        if ttype == ThreadType.PRESSURE1 or ttype == ThreadType.TEMPERATURE:
             self.__save(rawResult, ttype, startTime)
         data = np.concatenate((data, np.array(calcResult)))
         return data
