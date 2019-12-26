@@ -17,7 +17,6 @@ from csvPlot import csvPlot
 # must inherit QtCore.QObject in order to use 'connect'
 class MainWidget(QtCore.QObject, UIWindow):
     DEFAULT_TEMPERATURE = 0
-    DEFAULT_DATA = np.array([[0, 0, DEFAULT_TEMPERATURE]])
     sigAbortWorkers = QtCore.pyqtSignal()
 
     def __init__(self, app: QtGui.QApplication):
@@ -33,10 +32,10 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__threads = []
         self.__temp = self.DEFAULT_TEMPERATURE
 
-        self.praData = self.DEFAULT_DATA
-        self.tData = self.DEFAULT_DATA
-        self.p1Data = self.DEFAULT_DATA
-        self.p2Data = self.DEFAULT_DATA
+        self.praData = None
+        self.tData = None
+        self.p1Data = None
+        self.p2Data = None
 
         self.valuePraPlot = self.graph.praPl.plot(pen='#6ac600')
         self.valueTPlot = self.graph.tempPl.plot(pen='#6ac600')
@@ -120,10 +119,9 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.sigAbortWorkers.connect(worker.abort)
         ttype = worker.getThreadType()
 
-        df = pd.DataFrame(self.DEFAULT_DATA)
+        df = pd.DataFrame(dtype=float, columns=["Time", "{}".format(ttype.value), "PresetTemperature"])
         df.to_csv(
             "./data/{}/out_{:%Y%m%d%H%M%S}.csv".format(ttype.value, worker.getStartTime()),
-            header=["Time", "{}".format(ttype.value), "PresetTemperature"],
             index=False
         )
         self.controlDock.setStatus(ttype, True)
@@ -131,15 +129,15 @@ class MainWidget(QtCore.QObject, UIWindow):
         thread.started.connect(worker.work)
         thread.start()
 
-    @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType, int, datetime.datetime)
-    def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray, ave: float, ttype: ThreadType, step: int, startTime: datetime.datetime):
+    @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType, datetime.datetime)
+    def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray, ave: float, ttype: ThreadType, startTime: datetime.datetime):
         self.controlDock.setBwtext(ttype, ave)
 
         worker = self.getWorker(ttype)
         scale = worker.getScaleSize().value
 
         data = self.getData(ttype)
-        data = self.__setStepData(data, rawResult, calcResult, ttype, step, startTime)
+        data = self.__setStepData(data, rawResult, calcResult, ttype, startTime)
         self.setData(ttype, data)
 
         if ttype == ThreadType.PRASMA:
@@ -153,11 +151,14 @@ class MainWidget(QtCore.QObject, UIWindow):
         else:
             return
 
-    def __setStepData(self, data: np.ndarray, rawResult: np.ndarray, calcResult: np.ndarray, ttype: ThreadType, step: int, startTime: datetime.datetime):
-        # TODO: 確認
+    def __setStepData(self, data: np.ndarray, rawResult: np.ndarray, calcResult: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
+        # TODO: save interval
         if ttype == ThreadType.PRESSURE1 or ttype == ThreadType.TEMPERATURE:
             self.__save(rawResult, ttype, startTime)
-        data = np.concatenate((data, np.array(calcResult)))
+        if data is None:
+            data = calcResult
+        else:
+            data = np.concatenate((data, np.array(calcResult)))
         return data
 
     def __save(self, data: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
@@ -178,10 +179,10 @@ class MainWidget(QtCore.QObject, UIWindow):
         worker = self.getWorker(ttype)
         csvPlot(ttype, worker.getStartTime())
 
-        self.setData(ttype, self.DEFAULT_DATA)
+        self.setData(ttype)
 
         if self.__workers_done == len(ThreadType):
-            # self.abortPlotThreads()   # not necessary
+            # self.abortThreads()   # not necessary
             self.logDock.log.append("No more plot workers active")
             self.controlDock.startBtn.setEnabled(True)
             self.controlDock.stopBtn.setDisabled(True)
@@ -238,7 +239,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         else:
             return
 
-    def setData(self, ttype: ThreadType, data: np.ndarray):
+    def setData(self, ttype: ThreadType, data: np.ndarray = None):
         if ttype == ThreadType.PRASMA:
             self.praData = data
         elif ttype == ThreadType.TEMPERATURE:

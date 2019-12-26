@@ -15,7 +15,7 @@ except:
 # must inherit QtCore.QObject in order to use 'connect'
 class Worker(QtCore.QObject):
 
-    sigStep = QtCore.pyqtSignal(np.ndarray, np.ndarray, float, ThreadType, int, datetime.datetime)
+    sigStep = QtCore.pyqtSignal(np.ndarray, np.ndarray, float, ThreadType, datetime.datetime)
     sigDone = QtCore.pyqtSignal(int, ThreadType)
     sigMsg = QtCore.pyqtSignal(str)
 
@@ -124,7 +124,7 @@ class Worker(QtCore.QObject):
                 if not control is None:
                     controlStep = control(aveValue, controlStep)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype, totalStep+1, self.__startTime)
+                self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype, self.__startTime)
                 self.__rawData = np.zeros(shape=(10, 3))
                 self.__calcData = np.zeros(shape=(10, 3))
                 step = 0
@@ -141,9 +141,9 @@ class Worker(QtCore.QObject):
                 step -= 1
             if step > -1:
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                aveValue = np.mean(self.__rawData[:step+1, 1], dtype=float)
+                aveValue = np.mean(self.__rawData[:step+1][1], dtype=float)
                 aveValue = self.__ttype.getCalcValue(aveValue)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, aveValue, self.__ttype, -1, self.__startTime)
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, aveValue, self.__ttype, self.__startTime)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
@@ -182,7 +182,7 @@ class Worker(QtCore.QObject):
                 average = np.mean(self.__rawData[:, 1], dtype=float)
                 average = self.__ttype.getCalcValue(average)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype, totalStep+1, self.__startTime)
+                self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype, self.__startTime)
                 self.__rawData = np.zeros(shape=(10, 3))
                 self.__calcData = np.zeros(shape=(10, 3))
                 step = 0
@@ -196,10 +196,10 @@ class Worker(QtCore.QObject):
             if self.__rawData[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                aveValue = np.mean(self.__rawData[:step+1, 1], dtype=float)
+                aveValue = np.mean(self.__rawData[:step+1][1], dtype=float)
                 aveValue = self.__ttype.getCalcValue(aveValue)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], aveValue, self.__ttype, -1, self.__startTime)
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], aveValue, self.__ttype, self.__startTime)
 
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)

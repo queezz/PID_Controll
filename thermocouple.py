@@ -69,4 +69,7 @@ def calcElec(tm: float):
     return j
 
 if __name__ == "__main__":
-    pass
+    print("input mv:")
+    a = float(input())
+    a /= (10**3)
+    print(calcTemp(a))
