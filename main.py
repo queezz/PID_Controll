@@ -68,7 +68,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
     # MARK: - Threads
     def startThreads(self):
-        self.logDock.log.append("starting {} threads".format(len(ThreadType) - 2)) # TODO: setup
+        self.logDock.log.append("starting {} threads".format(len(ThreadType) - 1)) # TODO: setup
 
         self.controlDock.startBtn.setDisabled(True)
         self.controlDock.stopBtn.setEnabled(True)
@@ -102,9 +102,6 @@ class MainWidget(QtCore.QObject, UIWindow):
                 scaleButtons = self.controlDock.p1ScaleBtns
             elif index == 3:
                 scaleButtons = self.controlDock.p2ScaleBtns
-                # TODO: setup
-                thread.quit()
-                continue
             else:
                 return
 
@@ -186,7 +183,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         self.setData(ttype)
 
-        if self.__workers_done == len(ThreadType) - 2: # TODO: setup
+        if self.__workers_done == len(ThreadType) - 1: # TODO: setup
             # self.abortThreads()   # not necessary
             self.logDock.log.append("No more plot workers active")
             self.controlDock.startBtn.setEnabled(True)

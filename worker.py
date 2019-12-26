@@ -95,8 +95,7 @@ class Worker(QtCore.QObject):
         self.__plot(15, adc.PGA.PGA_10_0352V)
 
     def __plotPress2(self):
-        # TODO: pinId
-        self.__plot(2, 3)
+        self.__plot(16, adc.PGA.PGA_10_0352V)
 
     def __plot(self, pId: int, fscale: int, control: Callable[[float, int], int]=None):
         aio = adc(0x49, 0x3e)
