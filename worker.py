@@ -2,7 +2,6 @@ import time, datetime, math
 import numpy as np
 from pyqtgraph.Qt import QtCore, QtGui
 from typing import Callable
-from thermocouple import calcTemp
 from customTypes import ThreadType, ScaleSize
 
 TEST = False
@@ -84,24 +83,24 @@ class Worker(QtCore.QObject):
     # MARK: - Plot
     def __plotPrasma(self):
         # TODO: calc, pinId, control
-        self.__plot(3, self.__calcTest, self.__controlCur)
+        self.__plot(3, 4, self.__controlCur)
 
     def __plotTemp(self):
-        self.__plot(0, 5, calcTemp, self.__controlTemp)
+        self.__plot(0, 5, self.__controlTemp)
 
     def __plotPress1(self):
         # TODO: calc
-        self.__plot(15, 2, self.__calcTest)
+        self.__plot(15, 2)
 
     def __plotPress2(self):
         # TODO: calc, pinId
-        self.__plot(2, self.__calcTest)
+        self.__plot(2, 3)
 
-    def __plot(self, pId: int, fscale: int, calc: Callable[[float], float], control: Callable[[float, int], int]=None):
+    def __plot(self, pId: int, fscale: int, control: Callable[[float, int], int]=None):
         aio = AIO.AIO_32_0RA_IRC(0x49, 0x3e)
         if not control is None:
             GPIO.setmode(GPIO.BCM)
-            GPIO.setup(17, GPIO.OUT)
+            GPIO.setup(self.__ttype.getGPIO(), GPIO.OUT)
             controlStep = -1
         totalStep = 0
         step = 0
@@ -110,17 +109,18 @@ class Worker(QtCore.QObject):
             time.sleep(0.02)
             voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            value = calc(voltage)
+            value = self.__ttype.getCalcValue(voltage)
             aio.analog_read_volt(15, aio.DataRate.DR_860SPS, pga=2)
 
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
             if step%9 == 0 and step != 0:
                 aveValue = np.mean(self.__rawData[:, 1], dtype=float)
+                aveValue = self.__ttype.getCalcValue(aveValue)
                 if not control is None:
                     controlStep = control(aveValue, controlStep)
-                self.__calcData = np.array(list(map(lambda x: [x[0], calc(x[1]), x[2]], self.__rawData)))
-                self.sigStep.emit(self.__rawData, self.__calcData, calc(aveValue), self.__ttype)
+                self.__calcData = self.__ttype.getCalcArray(self.__rawData)
+                self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype)
                 self.__rawData = np.zeros(shape=(10, 3))
                 self.__calcData = np.zeros(shape=(10, 3))
                 step = 0
@@ -137,8 +137,9 @@ class Worker(QtCore.QObject):
             if self.__rawData[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.__calcData = np.array(list(map(lambda x: [x[0], calc(x[1]), x[2]], self.__rawData)))
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, calc(self.__rawData[step][1]), self.__ttype)
+                self.__calcData = self.__ttype.getCalcArray(self.__rawData)
+                ave = self.__ttype.getCalcValue(self.__rawData[step][1])
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, ave, self.__ttype)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
@@ -174,8 +175,9 @@ class Worker(QtCore.QObject):
 
             if step%9 == 0 and step != 0:
                 average = np.mean(self.__rawData[:, 1], dtype=float)
-                self.__calcData = np.array(list(map(lambda x: [x[0], self.__calcTest(x[1]), x[2]], self.__rawData)))
-                self.sigStep.emit(self.__rawData, self.__calcData, self.__calcTest(average), self.__ttype)
+                average = self.__ttype.getCalcValue(average)
+                self.__calcData = self.__ttype.getCalcArray(self.__rawData)
+                self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype)
                 self.__rawData = np.zeros(shape=(10, 3))
                 self.__calcData = np.zeros(shape=(10, 3))
                 step = 0
@@ -189,17 +191,15 @@ class Worker(QtCore.QObject):
             if self.__rawData[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.__calcData = np.array(list(map(lambda x: [x[0], self.__calcTest(x[1]), x[2]], self.__rawData)))
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], self.__calcTest(self.__rawData[step][1]), self.__ttype)
+                ave = self.__ttype.getCalcValue(self.__calcData[step][1])
+                self.__calcData = self.__ttype.getCalcArray(self.__rawData)
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], ave, self.__ttype)
 
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
         self.sigDone.emit(self.__id, self.__ttype)
         return
-
-    def __calcTest(self, value: float):
-        return value
 
 if __name__ == "__main__":
     pass
