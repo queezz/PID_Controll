@@ -6,13 +6,13 @@ from customTypes import ThreadType
 
 def csvPlot(ttype: ThreadType, startTime: datetime.datetime):
     plt.figure()
-    df = pd.read_csv("data/{}/out_{}.csv".format(ttype.value, startTime), header=0)
+    df = pd.read_csv("data/{}/out_{:%Y%m%d%H%M%S}.csv".format(ttype.value, startTime), header=0)
     plt.title("{}_{}".format(ttype.value, startTime))
     plt.xlabel("Time [s]")
     plt.ylabel(setYLabel(ttype))
     xy = ttype.getCalcArray(np.array(df))
     plt.plot(xy[:, 0], xy[:, 1])
-    plt.savefig('data/images/{}/out_{}.png'.format(ttype.value, startTime))
+    plt.savefig('data/images/{}/out_{:%Y%m%d%H%M%S}.png'.format(ttype.value, startTime))
 
 def setYLabel(ttype: ThreadType):
     unit = ttype.getUnit()

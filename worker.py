@@ -22,7 +22,7 @@ class Worker(QtCore.QObject):
     def __init__(self):
         super().__init__()
 
-    def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication, startTime: datetime, value: int, scale: ScaleSize):
+    def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication, startTime: datetime.datetime, value: int, scale: ScaleSize):
         self.__id = id
         self.__ttype = ttype
         self.__app = app
@@ -107,7 +107,7 @@ class Worker(QtCore.QObject):
         totalStep = 0
         step = 0
         while not (self.__abort):
-            time.sleep(0.07)
+            time.sleep(0.2)
             voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
@@ -174,7 +174,7 @@ class Worker(QtCore.QObject):
         totalStep = 0
         step = 0
         while not (self.__abort):
-            time.sleep(0.07)
+            time.sleep(0.2)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             self.__rawData[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
 

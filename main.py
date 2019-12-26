@@ -122,7 +122,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         df = pd.DataFrame(self.DEFAULT_DATA)
         df.to_csv(
-            "./data/{}/out_{}.csv".format(ttype.value, worker.getStartTime()),
+            "./data/{}/out_{:%Y%m%d%H%M%S}.csv".format(ttype.value, worker.getStartTime()),
             header=["Time", "{}".format(ttype.value), "PresetTemperature"],
             index=False
         )
@@ -163,7 +163,7 @@ class MainWidget(QtCore.QObject, UIWindow):
     def __save(self, data: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
         df = pd.DataFrame(data)
         df.to_csv(
-            "./data/{}/out_{}.csv".format(ttype.value, startTime),
+            "./data/{}/out_{:%Y%m%d%H%M%S}.csv".format(ttype.value, startTime),
             mode="a",
             header=False,
             index=False
