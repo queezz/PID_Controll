@@ -68,7 +68,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
     # MARK: - Threads
     def startThreads(self):
-        self.logDock.log.append("starting {} threads".format(len(ThreadType)))
+        self.logDock.log.append("starting {} threads".format(len(ThreadType) - 2)) # TODO: setup
 
         self.controlDock.startBtn.setDisabled(True)
         self.controlDock.stopBtn.setEnabled(True)
@@ -80,10 +80,10 @@ class MainWidget(QtCore.QObject, UIWindow):
             thread.wait()
 
         self.__threads = []
-        self.prasmaWorker = Worker()
+        # self.prasmaWorker = Worker()
         self.tWorker = Worker()
         self.p1Worker = Worker()
-        self.p2Worker = Worker()
+        # self.p2Worker = Worker()
 
         now = datetime.datetime.now()
 
@@ -93,12 +93,18 @@ class MainWidget(QtCore.QObject, UIWindow):
 
             if index == 0:
                 scaleButtons = self.controlDock.praScaleBtns
+                # TODO: setup
+                thread.quit()
+                continue
             elif index == 1:
                 scaleButtons = self.controlDock.tScaleBtns
             elif index == 2:
                 scaleButtons = self.controlDock.p1ScaleBtns
             elif index == 3:
                 scaleButtons = self.controlDock.p2ScaleBtns
+                # TODO: setup
+                thread.quit()
+                continue
             else:
                 return
 
@@ -122,7 +128,6 @@ class MainWidget(QtCore.QObject, UIWindow):
         df = pd.DataFrame(dtype=float, columns=["Time", "{}".format(ttype.value), "PresetTemperature"])
         df.to_csv(
             "./data/{}/out_{:%Y%m%d%H%M%S}.csv".format(ttype.value, worker.getStartTime()),
-            index=False
         )
         self.controlDock.setStatus(ttype, True)
 
@@ -181,7 +186,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         self.setData(ttype)
 
-        if self.__workers_done == len(ThreadType):
+        if self.__workers_done == len(ThreadType) - 2: # TODO: setup
             # self.abortThreads()   # not necessary
             self.logDock.log.append("No more plot workers active")
             self.controlDock.startBtn.setEnabled(True)
