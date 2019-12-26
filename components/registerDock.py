@@ -13,9 +13,9 @@ class RegisterDock(Dock):
         self.tempBw.setMaximumHeight(55)
         self.textField = QtGui.QSpinBox()
         self.textField.setMinimum(0)
-        self.textField.setMaximum(99999)
+        self.textField.setMaximum(800)
         self.textField.setSuffix(" ℃")
-        self.textField.setSingleStep(50)
+        self.textField.setSingleStep(10)
         self.registerBtn = QtGui.QPushButton("register")
 
         self.__setLayout()

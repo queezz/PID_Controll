@@ -2,12 +2,10 @@ import sys, datetime
 import numpy as np
 import pandas as pd
 from pyqtgraph.Qt import QtCore, QtGui
-from typing import Callable
 
 from mainView import UIWindow
 from worker import Worker
 from customTypes import ThreadType, ScaleSize
-from thermocouple import calcTemp
 from csvPlot import csvPlot
 
 """ debug """
@@ -18,7 +16,7 @@ from csvPlot import csvPlot
 
 # must inherit QtCore.QObject in order to use 'connect'
 class MainWidget(QtCore.QObject, UIWindow):
-    DEFAULT_TEMPERATURE = 50
+    DEFAULT_TEMPERATURE = 0
     DEFAULT_DATA = np.array([[0, 0, DEFAULT_TEMPERATURE]])
     sigAbortWorkers = QtCore.pyqtSignal()
 
@@ -32,7 +30,6 @@ class MainWidget(QtCore.QObject, UIWindow):
         QtCore.QThread.currentThread().setObjectName("main")
 
         self.__workers_done = 0
-        self.__stepCount = 0
         self.__threads = []
         self.__temp = self.DEFAULT_TEMPERATURE
 
@@ -78,7 +75,6 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.controlDock.stopBtn.setEnabled(True)
 
         self.__workers_done = 0
-        self.__stepCount += 1
 
         for thread, worker in self.__threads:
             thread.quit()
@@ -126,7 +122,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         df = pd.DataFrame(self.DEFAULT_DATA)
         df.to_csv(
-            "./data/{}/out_{}.csv".format(ttype.value, self.__stepCount),
+            "./data/{}/out_{}.csv".format(ttype.value, worker.getStartTime()),
             header=["Time", "{}".format(ttype.value), "PresetTemperature"],
             index=False
         )
@@ -135,15 +131,15 @@ class MainWidget(QtCore.QObject, UIWindow):
         thread.started.connect(worker.work)
         thread.start()
 
-    @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType)
-    def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray, ave: float, ttype: ThreadType):
+    @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType, int, datetime.datetime)
+    def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray, ave: float, ttype: ThreadType, step: int, startTime: datetime.datetime):
         self.controlDock.setBwtext(ttype, ave)
 
         worker = self.getWorker(ttype)
         scale = worker.getScaleSize().value
 
         data = self.getData(ttype)
-        data = self.__setStepData(data, rawResult, calcResult, ttype)
+        data = self.__setStepData(data, rawResult, calcResult, ttype, step, startTime)
         self.setData(ttype, data)
 
         if ttype == ThreadType.PRASMA:
@@ -157,16 +153,17 @@ class MainWidget(QtCore.QObject, UIWindow):
         else:
             return
 
-    def __setStepData(self, data: np.ndarray, rawResult: np.ndarray, calcResult: np.ndarray, ttype: ThreadType):
-        if ttype == ThreadType.TEMPERATURE:
-            self.__save(rawResult, ttype)
+    def __setStepData(self, data: np.ndarray, rawResult: np.ndarray, calcResult: np.ndarray, ttype: ThreadType, step: int, startTime: datetime.datetime):
+        # TODO: 確認
+        if step % 10000 == 0 and (ttype == ThreadType.PRESSURE1 or ttype == ThreadType.TEMPERATURE):
+            self.__save(rawResult, ttype, startTime)
         data = np.concatenate((data, np.array(calcResult)))
         return data
 
-    def __save(self, data: np.ndarray, ttype: ThreadType):
+    def __save(self, data: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
         df = pd.DataFrame(data)
         df.to_csv(
-            "./data/{}/out_{}.csv".format(ttype.value, self.__stepCount),
+            "./data/{}/out_{}.csv".format(ttype.value, startTime),
             mode="a",
             header=False,
             index=False
@@ -178,7 +175,8 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.logDock.progress.append("-- Signal {} STOPPED".format(workerId))
         self.__workers_done += 1
         self.controlDock.setStatus(ttype, False)
-        csvPlot(ttype, self.__stepCount)
+        worker = self.getWorker(ttype)
+        csvPlot(ttype, worker.getStartTime())
 
         self.setData(ttype, self.DEFAULT_DATA)
 

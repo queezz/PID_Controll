@@ -7,7 +7,7 @@ from customTypes import ThreadType, ScaleSize
 TEST = False
 try:
     import RPi.GPIO as GPIO
-    import AIO
+    from AIO import AIO_32_0RA_IRC as adc
 except:
     print("no RPi.GPIO or AIO")
     TEST = True
@@ -15,7 +15,7 @@ except:
 # must inherit QtCore.QObject in order to use 'connect'
 class Worker(QtCore.QObject):
 
-    sigStep = QtCore.pyqtSignal(np.ndarray, np.ndarray, float, ThreadType)
+    sigStep = QtCore.pyqtSignal(np.ndarray, np.ndarray, float, ThreadType, int, datetime.datetime)
     sigDone = QtCore.pyqtSignal(int, ThreadType)
     sigMsg = QtCore.pyqtSignal(str)
 
@@ -39,6 +39,9 @@ class Worker(QtCore.QObject):
 
     def getScaleSize(self):
         return self.__scaleSize
+
+    def getStartTime(self):
+        return self.__startTime
 
     # MARK: - Setters
     def setScaleSize(self, scale: ScaleSize):
@@ -82,41 +85,37 @@ class Worker(QtCore.QObject):
 
     # MARK: - Plot
     def __plotPrasma(self):
-        # TODO: calc, pinId, control
+        # TODO: pinId, control
         self.__plot(3, 4, self.__controlCur)
 
     def __plotTemp(self):
-        self.__plot(0, AIO.AIO_32_0RA_IRC.PGA.PGA_1_2544V, self.__controlTemp)
+        self.__plot(0, adc.PGA.PGA_1_2544V, self.__controlTemp)
 
     def __plotPress1(self):
-        # TODO: calc
-        self.__plot(15, AIO.AIO_32_0RA_IRC.PGA.PGA_10_0352V)
+        self.__plot(15, adc.PGA.PGA_10_0352V)
 
     def __plotPress2(self):
-        # TODO: calc, pinId
+        # TODO: pinId
         self.__plot(2, 3)
 
     def __plot(self, pId: int, fscale: int, control: Callable[[float, int], int]=None):
-        aio = AIO.AIO_32_0RA_IRC(0x49, 0x3e)
+        aio = adc(0x49, 0x3e)
         if not control is None:
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(self.__ttype.getGPIO(), GPIO.OUT)
             controlStep = -1
         totalStep = 0
         step = 0
-        preVol = 0.0
         while not (self.__abort):
-            time.sleep(0.02)
-            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
-
-            if voltage >= AIO.AIO_32_0RA_IRC.PGA.getLimit(fscale):
-                voltage = preVol
-            preVol = voltage
+            time.sleep(0.05)
+            # TODO: datarate確認
+            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_475SPS, pga=fscale)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             value = self.__ttype.getCalcValue(voltage)
 
-            aio.analog_read_volt(15, aio.DataRate.DR_860SPS, pga=2)
+            # TODO: 確認
+            # aio.analog_read_volt(15, aio.DataRate.DR_475SPS, pga=2)
 
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
@@ -126,7 +125,7 @@ class Worker(QtCore.QObject):
                 if not control is None:
                     controlStep = control(aveValue, controlStep)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype)
+                self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype, totalStep+1, self.__startTime)
                 self.__rawData = np.zeros(shape=(10, 3))
                 self.__calcData = np.zeros(shape=(10, 3))
                 step = 0
@@ -145,7 +144,7 @@ class Worker(QtCore.QObject):
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
                 aveValue = np.mean(self.__rawData[:step+1, 1], dtype=float)
                 aveValue = self.__ttype.getCalcValue(aveValue)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, aveValue, self.__ttype)
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, aveValue, self.__ttype, totalStep+1, self.__startTime)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
@@ -156,9 +155,10 @@ class Worker(QtCore.QObject):
 
     # MARK: - Control
     def __controlTemp(self, aveTemp: float, steps: int):
+        # TODO: 調整
         if steps <= 0:
             d = self.__presetTemp - aveTemp
-            if d <= 2:
+            if d <= 1.5:
                 return -1
             elif d >= 10:
                 return int(d*10)
@@ -175,7 +175,7 @@ class Worker(QtCore.QObject):
         totalStep = 0
         step = 0
         while not (self.__abort):
-            time.sleep(0.01)
+            time.sleep(0.05)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             self.__rawData[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
 
@@ -183,7 +183,7 @@ class Worker(QtCore.QObject):
                 average = np.mean(self.__rawData[:, 1], dtype=float)
                 average = self.__ttype.getCalcValue(average)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype)
+                self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype, totalStep+1, self.__startTime)
                 self.__rawData = np.zeros(shape=(10, 3))
                 self.__calcData = np.zeros(shape=(10, 3))
                 step = 0
@@ -200,7 +200,7 @@ class Worker(QtCore.QObject):
                 aveValue = np.mean(self.__rawData[:step+1, 1], dtype=float)
                 aveValue = self.__ttype.getCalcValue(aveValue)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], aveValue, self.__ttype)
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], aveValue, self.__ttype, totalStep+1, self.__startTime)
 
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)

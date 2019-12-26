@@ -1,6 +1,7 @@
 from enum import Enum
 import numpy as np
-from thermocouple import calcTemp
+from thermocouple import calcTemp, maskTemp
+from ionizationGauge import maskPres1
 
 class ThreadType(Enum):
     PRASMA = "Prasma"
@@ -39,18 +40,20 @@ class ThreadType(Enum):
         else:
             return ""
 
+    # TODO: calc
     def getCalcArray(self, data: np.ndarray):
         if self == self.PRASMA:
             return data
         elif self == self.TEMPERATURE:
-            return np.array([[i[0], calcTemp(i[1]), i[2]] for i in data])
+            return np.array(maskTemp(data))
         elif self == self.PRESSURE1:
-            return data
+            return np.array(maskPres1(data))
         elif self == self.PRESSURE2:
             return data
         else:
             return data
 
+    # TODO: calc
     def getCalcValue(self, data: float):
         if self == self.PRASMA:
             return data
