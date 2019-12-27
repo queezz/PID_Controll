@@ -155,8 +155,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
     def __setStepData(self, data: np.ndarray, rawResult: np.ndarray, calcResult: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
         # TODO: save interval
-        if ttype == ThreadType.PRESSURE1 or ttype == ThreadType.TEMPERATURE:
-            self.__save(rawResult, ttype, startTime)
+        self.__save(rawResult, ttype, startTime)
         if data is None:
             data = calcResult
         else:
