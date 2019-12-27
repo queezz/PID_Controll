@@ -87,6 +87,9 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         now = datetime.datetime.now()
 
+        print("start threads: {}".format(now))
+        self.logDock.progress.append("start threads: {}".format(now))
+
         for index, worker in enumerate([self.prasmaWorker, self.tWorker, self.p1Worker, self.p2Worker]):
             thread = QtCore.QThread()
             thread.setObjectName("thread_{}".format(index))

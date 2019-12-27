@@ -157,12 +157,12 @@ class Worker(QtCore.QObject):
         # TODO: 調整
         if steps <= 0:
             d = self.__presetTemp - aveTemp
-            if d <= 2:
+            if d <= 1.5:
                 return -1
-            elif d >= 10:
+            elif d >= 15:
                 return int(d*10)
             else:
-                return int(d-0.5)
+                return int(d+1)
         else:
             return steps
 
