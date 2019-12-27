@@ -115,7 +115,7 @@ class Worker(QtCore.QObject):
             #  I do not know why this is needed
             aio.analog_read_volt(15, aio.DataRate.DR_860SPS, pga=2)
             aio.analog_read_volt(16, aio.DataRate.DR_860SPS, pga=2)
-            
+
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
             if step%9 == 0 and step != 0:
@@ -157,12 +157,12 @@ class Worker(QtCore.QObject):
         # TODO: 調整
         if steps <= 0:
             d = self.__presetTemp - aveTemp
-            if d <= 1.5:
+            if d <= 2:
                 return -1
             elif d >= 10:
                 return int(d*10)
             else:
-                return int(d+1)
+                return int(d)
         else:
             return steps
 
