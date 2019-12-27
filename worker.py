@@ -106,7 +106,7 @@ class Worker(QtCore.QObject):
         totalStep = 0
         step = 0
         while not (self.__abort):
-            time.sleep(0.2)
+            time.sleep(0.15)
             voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
@@ -162,7 +162,7 @@ class Worker(QtCore.QObject):
             elif d >= 10:
                 return int(d*10)
             else:
-                return int(d)
+                return int(d-0.5)
         else:
             return steps
 
