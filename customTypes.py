@@ -2,6 +2,7 @@ from enum import Enum
 import numpy as np
 from thermocouple import calcTemp, maskTemp
 from ionizationGauge import maskPres1
+from pfeiffer import maskPres2
 
 class ThreadType(Enum):
     PRASMA = "Prasma"
@@ -49,7 +50,7 @@ class ThreadType(Enum):
         elif self == self.PRESSURE1:
             return np.array(maskPres1(data))
         elif self == self.PRESSURE2:
-            return data
+            return np.array(maskPres2(data))
         else:
             return data
 
