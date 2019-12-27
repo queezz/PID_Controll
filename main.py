@@ -128,6 +128,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         df = pd.DataFrame(dtype=float, columns=["Time", "{}".format(ttype.value), "PresetTemperature"])
         df.to_csv(
             "./data/{}/out_{:%Y%m%d%H%M%S}.csv".format(ttype.value, worker.getStartTime()),
+            index=False
         )
         self.controlDock.setStatus(ttype, True)
 
