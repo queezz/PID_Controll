@@ -16,7 +16,7 @@ class Graph(pg.GraphicsLayoutWidget):
         self.tempPl.setLabel('bottom', "time", units='sec')
 
         self.pres1Pl = self.addPlot(row=2, col=0)
-        self.pres1Pl.setLabel('left', "pressure1", units='Torr')
+        self.pres1Pl.setLabel('left', "pressure1", units='V')
         self.pres1Pl.setLabel('bottom', "time", units='sec')
 
         self.pres2Pl = self.addPlot(row=3, col=0)
