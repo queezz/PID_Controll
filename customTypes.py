@@ -46,11 +46,11 @@ class ThreadType(Enum):
         if self == self.PRASMA:
             return data
         elif self == self.TEMPERATURE:
-            return np.array(maskTemp(data))
+            return maskTemp(data)
         elif self == self.PRESSURE1:
-            return np.array(maskIonPres(data))
+            return maskIonPres(data)
         elif self == self.PRESSURE2:
-            return np.array(maskPfePres(data))
+            return maskPfePres(data)
         else:
             return data
 

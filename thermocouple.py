@@ -3,7 +3,10 @@ import numpy as np
 
 ''' thermocouple at membrane '''
 def maskTemp(voltages: np.ndarray):
-    return [[i[0], calcTemp(i[1]), i[2]] for i in voltages if calcTemp(i[1]) < 400]
+    mask = np.where(voltages[:, 1] < 0.015)
+    tmp = voltages[mask]
+    tmp[:, 1] = [calcTemp(i) for i in tmp[:, 1]]
+    return tmp
 
 def calcTemp(voltage: float):
     base = 20.9

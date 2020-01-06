@@ -3,8 +3,8 @@ import numpy as np
 
 ''' permeation pressure gauge '''
 def maskIonPres(voltages: np.ndarray):
-    # TODO: 閾値の設定
-    return [i for i in voltages if i[1] >= 0.005]
+    mask = np.where(voltages[:, 1] > 0.06)
+    return voltages[mask]
 
 def calcIonPres(voltage: float, scale: int):
     pres = voltage * (10**scale)
