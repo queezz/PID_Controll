@@ -1,0 +1,64 @@
+2019-12-27 20:34:19.488822 : ionization gauge unit 10^-6
+
+// Argon and D2 plasma
+ionization gauge unit 10^-7
+2019-12-27 20:47:15.956785 : gas in(D2 and Argon)
+2019-12-27 20:47:44.891902 : plasma current 90V まだ繋がっていない
+2019-12-27 20:48:36.838551 : cathode on 24.3A filament
+2019-12-27 20:49:04.673256 : vgclose (disconnect membrane chamber and plasma chamber)
+2019-12-27 20:49:27.301743 : plasma on
+2019-12-27 20:49:38.915852 : plasma 1A
+2019-12-27 20:51:34.238628 : plasma off
+
+
+2019-12-27 20:52:03.158754 : vgopen (connect membrane chamber and plasma chamber)
+2019-12-27 20:52:33.303608 : gas out (Argon)
+
+// Argon and D2 plasma 1A, 2A
+2019-12-27 20:52:59.692105 : gas in (Argon)
+2019-12-27 20:54:24.280137 : vgclose
+2019-12-27 20:54:29.311921 : plasma on 1A
+2019-12-27 20:56:44.275986 : plasma 2A 
+2019-12-27 20:58:20.341058 : plasma off
+2019-12-27 20:58:34.710453 : cathode off filament
+
+// Argon and D2 plasma 2A, 1A
+2019-12-27 20:59:21.328001 : ionization gauge unit 10^-7
+2019-12-27 20:59:34.040274 : gas out (D2 and Argon)
+2019-12-27 21:00:33.921996 : cathode on 26.1A
+2019-12-27 21:00:35.886541 : gas in (D2)
+2019-12-27 21:01:44.917410 : anode on
+2019-12-27 21:01:54.950280 : gas in (Argon)
+2019-12-27 21:02:40.505550 : plasma on 2A
+2019-12-27 21:05:16.148753 : plasma 1A
+
+
+2019-12-27 21:08:52.705193 : gas out (D2)
+2019-12-27 21:09:47.351981 : gas out (Argon)
+2019-12-27 21:09:51.717460 : plasma off
+2019-12-27 21:10:09.636516 : cathode off
+
+// no plasma, any pereamation ?
+2019-12-27 21:15:14.627389 : gas in (D2)
+2019-12-27 21:17:43.321627 : plasma なしでもちょっとpereamation する　圧力しだい
+2019-12-27 21:18:09.651012 : 2*10^-3 Torr D2
+2019-12-27 21:21:01.893472 : gas out (D2)
+
+// Argon plasma
+2019-12-27 21:21:14.796326 : gas in (Argon)
+2019-12-27 21:21:37.228024 : cathode on filament
+2019-12-27 21:21:42.417397 : plasma on 1A
+
+// add D2 in Argon plasma
+2019-12-27 21:23:12.227539 : gas in (D2)
+2019-12-27 21:29:49.976348 : gas out (D2)
+2019-12-27 21:30:45.814071 : gas out (Argon)
+2019-12-27 21:31:19.950190 : cathode off
+2019-12-27 21:31:24.243313 : plasma off
+
+// no plasma, any pereamation ? on HOT filament
+2019-12-27 21:33:07.941868 : gas in (D2)
+2019-12-27 21:34:23.365773 : cathode on 30A
+2019-12-27 21:36:32.311850 : cathode off
+2019-12-27 21:37:07.517309 : gas out (D2)
+
