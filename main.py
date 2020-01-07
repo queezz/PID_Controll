@@ -6,7 +6,6 @@ from pyqtgraph.Qt import QtCore, QtGui
 from mainView import UIWindow
 from worker import Worker
 from customTypes import ThreadType, ScaleSize
-from csvPlot import csvPlot
 
 """ debug """
 # def trap_exc_during_debug(*args):
@@ -182,7 +181,6 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__workers_done += 1
         self.controlDock.setStatus(ttype, False)
         worker = self.getWorker(ttype)
-        csvPlot(ttype, worker.getStartTime())
 
         self.setData(ttype)
 
