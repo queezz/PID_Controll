@@ -11,22 +11,22 @@ def time_keeper():
     help()
     while(True):
         an = input("input command: ")
-        if an == "pon":
+        if an[:3] == "pon":
             t = datetime.now()
-            logger.info("plasma start")
-            print("plasma start time: {}".format(t))
+            logger.info("{} plasma start".format(an[4:]))
+            print("{} plasma start time: {}".format(an[4:], t))
         elif an == "poff":
             t = datetime.now()
             logger.info("plasma stop")
             print("plasma stop time: {}".format(t))
-        elif an == "gin":
+        elif an[:3] == "gin":
             t = datetime.now()
-            logger.info("gas inflow start time")
-            print("gas inflow start time: {}".format(t))
-        elif an == "gout":
+            logger.info("{} gas inflow start time".format(an[4:]))
+            print("{} gas inflow start time: {}".format(an[4:], t))
+        elif an[:4] == "gout":
             t = datetime.now()
-            logger.info("gas inflow stop time")
-            print("gas inflow stop time: {}".format(t))
+            logger.info("{} gas inflow stop time".format(an[5:]))
+            print("{} gas inflow stop time: {}".format(an[5:], t))
         elif an == "vgopen":
             t = datetime.now()
             logger.info("connect membrane chamber and plasma chamber")
@@ -37,22 +37,24 @@ def time_keeper():
             print("disconnect membrane chamber and plasma chamber: {}".format(t))
         elif an == "-h" or an == "--help" or an == "help":
             help()
-        elif an == "exit":
+        elif an == "exit" or an == "exit()":
             t = datetime.now()
             print("exit: {}".format(t))
             break
         else:
-            continue
+            t = datetime.now()
+            logger.info("{}".format(an))
+            print("{} : {}".format(an, t))
         print("")
 
 def help():
     print("")
     print("-------time keeper--------")
     print("help:")
-    print("     `pon`: plasma on time")
+    print("     `pon {ampere}`: plasma on time")
     print("     `poff`: plasma off time")
-    print("     `gin`: gas inflow start time")
-    print("     `gout`: gas inflow stop time")
+    print("     `gin {gas_name}`: gas inflow start time")
+    print("     `gout {gas_name}`: gas inflow stop time")
     print("     `vgopen`: connect membrane chamber and plasma chamber")
     print("     `vgclose`: disconnect membrane chamber and plasma chamber")
     print("     `exit`: exit from this problem")
