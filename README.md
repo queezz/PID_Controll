@@ -4,6 +4,7 @@
 ```
 - pyqtgraph
 - numpy
+- scipy
 - matplotlib
 - pandas
 - python3-smbus
