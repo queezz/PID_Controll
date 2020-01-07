@@ -208,10 +208,11 @@ class MainWidget(QtCore.QObject, UIWindow):
         value = self.registerDock.textField.value()
         self.__temp = value
         self.registerDock.setTemp(self.__temp)
-        # self.prasmaWorker.setPresetTemp(self.__temp)
-        self.tWorker.setPresetTemp(self.__temp)
-        self.p1Worker.setPresetTemp(self.__temp)
-        self.p2Worker.setPresetTemp(self.__temp)
+        if self.tWorker is not None:
+            # self.prasmaWorker.setPresetTemp(self.__temp)
+            self.tWorker.setPresetTemp(self.__temp)
+            self.p1Worker.setPresetTemp(self.__temp)
+            self.p2Worker.setPresetTemp(self.__temp)
 
     def setScale(self, index: int, ttype: ThreadType):
         scale = ScaleSize.getEnum(index)

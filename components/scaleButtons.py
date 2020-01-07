@@ -23,7 +23,7 @@ class ScaleButtons(pg.LayoutWidget):
         self.selectBtn.addItem("Full")
 
     def __setLabelFont(self, text: str, color: str):
-        txt = "<font color={}><h4>{}</h4></font>".format(color, text)
+        txt = "<font color={}><h5>{}</h5></font>".format(color, text)
         return txt
 
 if __name__ == "__main__":

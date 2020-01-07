@@ -22,7 +22,7 @@ class UIWindow(object):
         self.registerDock = RegisterDock()
         self.graph = Graph()
 
-        self.MainWindow.setGeometry(100, 100, 1024, 600)
+        self.MainWindow.setGeometry(0, 20, 1280, 700)
         self.MainWindow.setObjectName("Monitor")
         self.MainWindow.setWindowTitle("Data Logger")
         self.MainWindow.statusBar().showMessage('')
