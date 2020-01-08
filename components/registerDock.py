@@ -31,6 +31,7 @@ class RegisterDock(Dock):
 
     def __setLayout(self):
         self.addWidget(self.widget)
+
         self.widget.addWidget(self.tempBw, 0, 0,1,2)        
         self.widget.addWidget(self.temperatureSB, 1, 0)
         self.widget.addWidget(self.registerBtn, 1, 1)

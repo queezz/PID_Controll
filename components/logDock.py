@@ -6,7 +6,6 @@ class LogDock(Dock):
 
     def __init__(self):
         super().__init__("Log")
-
         self.widget = pg.LayoutWidget()
 
         self.log = QtGui.QTextEdit()
