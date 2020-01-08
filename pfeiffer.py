@@ -1,4 +1,3 @@
-import math
 import numpy as np
 
 ''' pressure gauge in plasma chamber '''

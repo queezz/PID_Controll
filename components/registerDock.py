@@ -31,25 +31,27 @@ class RegisterDock(Dock):
         self.widget.addWidget(self.upButton, 1, 1)
         self.widget.addWidget(self.downButton, 1, 2)
         self.textField.setStyleSheet("QSpinBox::up-button { width: 25px; }\n"
-                "QSpinBox::down-button { width: 27px;}")
-        self.upButton.clicked.connect(self.onTouchUpBtn)
-        self.downButton.clicked.connect(self.onTouchDownBtn)
+            "QSpinBox::down-button { width: 27px;}")
+        self.upButton.clicked.connect(self.__onTouchUpBtn)
+        self.downButton.clicked.connect(self.__onTouchDownBtn)
 
     def __setLabelFont(self, text: str, color: str):
         txt = "<font color={}><h4>{}</h4></font>".format(color, text)
         return txt
 
-    def setTemp(self, temperature: int):
-        self.tempBw.setText("""<font size=4 color="#d1451b">{} ℃</font>""".format(temperature))
-        self.textField.setValue(temperature)
-
-    def onTouchUpBtn(self):
+    """ QSpinBox """
+    def __onTouchUpBtn(self):
         cur = self.textField.value()
         self.textField.setValue(cur+10)
 
-    def onTouchDownBtn(self):
+    def __onTouchDownBtn(self):
         cur = self.textField.value()
         self.textField.setValue(cur-10)
+
+    """ set temperature """
+    def setTemp(self, temperature: int):
+        self.tempBw.setText("""<font size=4 color="#d1451b">{} ℃</font>""".format(temperature))
+        self.textField.setValue(temperature)
 
 if __name__ == "__main__":
     pass

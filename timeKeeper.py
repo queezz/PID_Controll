@@ -6,7 +6,7 @@ def time_keeper():
     now = datetime.now()
     formatter = Formatter('%(asctime)s:%(levelname)s:%(message)s')
     logging.basicConfig(filename="data/log/{:%Y%m%d%H%M%S}.log".format(now), level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
-    logger =logging.getLogger("{:%Y%m%d%H%M%S}".format(now))
+    logger = logging.getLogger("{:%Y%m%d%H%M%S}".format(now))
 
     help()
     while(True):
