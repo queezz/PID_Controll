@@ -1,55 +1,57 @@
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui
+from pyqtgraph import QtCore
 from pyqtgraph.dockarea import Dock
+
+DEGREE_SMB = u'\N{DEGREE SIGN}'
 
 class RegisterDock(Dock):
 
     def __init__(self):
-        super().__init__("Register")
-        self.widget = pg.LayoutWidget()
-
-        self.registerLabel = QtGui.QLabel(self.__setLabelFont("Temperature: ", "#000001"))
-        self.tempBw = QtGui.QTextBrowser()
-        self.tempBw.setMaximumHeight(40)
-        self.textField = QtGui.QSpinBox()
-        self.textField.setMinimum(0)
-        self.textField.setMaximum(600)
-        self.textField.setSuffix(" ℃")
-        self.textField.setSingleStep(10)
-        self.registerBtn = QtGui.QPushButton("register")
-        self.upButton= QtGui.QPushButton("Up")
-        self.downButton= QtGui.QPushButton("Down")
+        super().__init__("Membreane Heater")
+        self.widget = pg.LayoutWidget()        
+        self.tempBw = QtGui.QTextBrowser()        
+        self.tempBw.setMinimumSize(QtCore.QSize(80,60))
+        self.tempBw.setMaximumHeight(60)
+        self.temperatureSB = QtGui.QSpinBox()
+        self.temperatureSB.setMinimum(0)
+        self.temperatureSB.setMaximum(600)
+        self.temperatureSB.setSuffix(f'{DEGREE_SMB}')
+        self.temperatureSB.setMinimumSize(QtCore.QSize(180, 80))
+        self.temperatureSB.setSingleStep(10)
+        self.temperatureSB.setStyleSheet(
+                "QSpinBox::up-button   { width: 60px; }\n"
+                "QSpinBox::down-button { width: 60px;}\n"
+                "QSpinBox {font: 26pt;}"
+        )
+        self.registerBtn = QtGui.QPushButton("set")
+        self.registerBtn.setMinimumSize(QtCore.QSize(80, 80))
+        self.registerBtn.setStyleSheet("font: 26pt")
         self.__setLayout()
 
     def __setLayout(self):
         self.addWidget(self.widget)
-
-        self.widget.addWidget(self.registerLabel, 0, 0)
-        self.widget.addWidget(self.tempBw, 0, 1)
-        self.widget.addWidget(self.registerBtn, 0, 2)
-        self.widget.addWidget(self.textField, 1, 0)
-        self.widget.addWidget(self.upButton, 1, 1)
-        self.widget.addWidget(self.downButton, 1, 2)
-        self.textField.setStyleSheet("QSpinBox::up-button { width: 25px; }\n"
-                "QSpinBox::down-button { width: 27px;}")
-        self.upButton.clicked.connect(self.onTouchUpBtn)
-        self.downButton.clicked.connect(self.onTouchDownBtn)
+        self.widget.addWidget(self.tempBw, 0, 0,1,2)        
+        self.widget.addWidget(self.temperatureSB, 1, 0)
+        self.widget.addWidget(self.registerBtn, 1, 1)
+        
+        self.verticalSpacer = QtGui.QSpacerItem(
+            0, 0, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding
+        )
+        self.widget.layout.setVerticalSpacing(0)
+        self.widget.layout.addItem(self.verticalSpacer)        
 
     def __setLabelFont(self, text: str, color: str):
         txt = "<font color={}><h4>{}</h4></font>".format(color, text)
         return txt
 
     def setTemp(self, temperature: int):
-        self.tempBw.setText("""<font size=4 color="#d1451b">{} ℃</font>""".format(temperature))
-        self.textField.setValue(temperature)
-
-    def onTouchUpBtn(self):
-        cur = self.textField.value()
-        self.textField.setValue(cur+10)
-
-    def onTouchDownBtn(self):
-        cur = self.textField.value()
-        self.textField.setValue(cur-10)
+        htmltag = '<font size=8 color="#d1451b">'
+        setpoint = '<font size=6 color="#d1451b">setpoint: </font>'
+        self.tempBw.setText(
+            f'{setpoint}{htmltag}{temperature} {DEGREE_SMB}C</font>'
+        )
+        self.temperatureSB.setValue(temperature)
 
 if __name__ == "__main__":
     pass
