@@ -36,10 +36,19 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.p1Data = None
         self.p2Data = None
 
+        self.graph.removeItem(self.graph.praPl) # remove Plasma current plot
+        self.graph.removeItem(self.graph.pres2Pl) # remove P2 plot
+        
         self.valuePraPlot = self.graph.praPl.plot(pen='#6ac600')
-        self.valueTPlot = self.graph.tempPl.plot(pen='#6ac600')
+        self.valueTPlot = self.graph.tempPl.plot(pen='#5999ff')
         self.valueP1Plot = self.graph.pres1Pl.plot(pen='#6ac600')
-        self.valueP2Plot = self.graph.pres2Pl.plot(pen='#6ac600')
+        #self.valuePxPlot = self.graph.pres1Pl.plot(pen='#5999ff')
+        self.valueP2Plot = self.graph.pres1Pl.plot(pen='#5999ff')
+        
+        self.graph.pres1Pl.setLogMode(y=True)
+        self.graph.pres1Pl.setYRange(-8,3,0)
+        self.graph.tempPl.setYRange(0,500,0)
+        #self.graph.pres1Pl.setDownsampling(auto=True,mode='mean')
 
         self.prasmaWorker = None
         self.tWorker = None
@@ -137,8 +146,7 @@ class MainWidget(QtCore.QObject, UIWindow):
     @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType, datetime.datetime)
     def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray,
                     ave: float, ttype: ThreadType, startTime: datetime.datetime):
-        """ collect data on worker step
-        """
+        """ collect data on worker step """
         self.controlDock.setBwtext(ttype, ave)
 
         worker = self.getWorker(ttype)
@@ -152,16 +160,18 @@ class MainWidget(QtCore.QObject, UIWindow):
             self.valuePraPlot.setData(data[scale:, 0], data[scale:, 1])
         elif ttype == ThreadType.TEMPERATURE:
             self.valueTPlot.setData(data[scale:, 0], data[scale:, 1])
+            #self.valuePxPlot.setData(data[scale:, 0], data[scale:, 1])
         elif ttype == ThreadType.PRESSURE1:
             self.valueP1Plot.setData(data[scale:, 0], data[scale:, 1])
         elif ttype == ThreadType.PRESSURE2:
             self.valueP2Plot.setData(data[scale:, 0], data[scale:, 1])
         else:
             return
-
+            
     def __setStepData(self, data: np.ndarray, rawResult: np.ndarray,
                       calcResult: np.ndarray, ttype: ThreadType,
                       startTime: datetime.datetime):
+        """ Append new data from Worker to main data arrays """
         # TODO: save interval
         self.__save(rawResult, ttype, startTime)
         if data is None:
