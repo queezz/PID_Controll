@@ -14,7 +14,7 @@ class ControlDock(Dock):
         self.startBtn = QtGui.QPushButton("Start All")
         self.stopBtn = QtGui.QPushButton("Stop All")
 
-        self.prasmaLabel = QtGui.QLabel(self.__setLabelFont("Prasma Current", "#000001"))
+        self.prasmaLabel = QtGui.QLabel(self.__setLabelFont("Plasma Current", "#000001"))
         self.prasmaStatus = QtGui.QLabel(self.__setStatusFont(False))
         self.valuePraBw = QtGui.QTextBrowser()
         self.valuePraBw.setMaximumHeight(45)
@@ -70,6 +70,11 @@ class ControlDock(Dock):
         self.widget.addWidget(self.pressure2Status, 7, 1)
         self.widget.addWidget(self.valueP2Bw, 8, 0, 1, 1)
         self.widget.addWidget(self.p2ScaleBtns, 8, 1, 1, 1)
+        
+        self.verticalSpacer = QtGui.QSpacerItem(
+            0, 0, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding
+        )
+        self.widget.layout.addItem(self.verticalSpacer)
 
     def __setLabelFont(self, text: str, color: str):
         txt = "<font color={}><h3>{}</h3></font>".format(color, text)

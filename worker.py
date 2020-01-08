@@ -22,7 +22,8 @@ class Worker(QtCore.QObject):
     def __init__(self):
         super().__init__()
 
-    def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication, startTime: datetime.datetime, value: int, scale: ScaleSize):
+    def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication,
+                  startTime: datetime.datetime, value: int, scale: ScaleSize):
         self.__id = id
         self.__ttype = ttype
         self.__app = app

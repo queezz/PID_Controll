@@ -135,7 +135,10 @@ class MainWidget(QtCore.QObject, UIWindow):
         thread.start()
 
     @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType, datetime.datetime)
-    def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray, ave: float, ttype: ThreadType, startTime: datetime.datetime):
+    def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray,
+                    ave: float, ttype: ThreadType, startTime: datetime.datetime):
+        """ collect data on worker step
+        """
         self.controlDock.setBwtext(ttype, ave)
 
         worker = self.getWorker(ttype)
@@ -156,8 +159,9 @@ class MainWidget(QtCore.QObject, UIWindow):
         else:
             return
 
-    """ add data """
-    def __setStepData(self, data: np.ndarray, rawResult: np.ndarray, calcResult: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
+    def __setStepData(self, data: np.ndarray, rawResult: np.ndarray,
+                      calcResult: np.ndarray, ttype: ThreadType,
+                      startTime: datetime.datetime):
         # TODO: save interval
         self.__save(rawResult, ttype, startTime)
         if data is None:
@@ -205,7 +209,7 @@ class MainWidget(QtCore.QObject, UIWindow):
     # MARK: - Methods
     @QtCore.pyqtSlot()
     def registerTemp(self):
-        value = self.registerDock.textField.value()
+        value = self.registerDock.temperatureSB.value()
         self.__temp = value
         self.registerDock.setTemp(self.__temp)
         if self.tWorker is not None:
@@ -234,6 +238,8 @@ class MainWidget(QtCore.QObject, UIWindow):
             return
 
     def getData(self, ttype: ThreadType):
+        """ Get data from worker
+        """
         if ttype == ThreadType.PRASMA:
             return self.praData
         elif ttype == ThreadType.TEMPERATURE:
