@@ -180,6 +180,7 @@ class MainWidget(QtCore.QObject, UIWindow):
             data = np.concatenate((data, np.array(calcResult)))
         return data
 
+    """ write csv """
     def __save(self, data: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
         df = pd.DataFrame(data)
         df.to_csv(
@@ -222,7 +223,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__temp = value
         self.registerDock.setTemp(self.__temp)
         if self.tWorker is not None:
-            # self.prasmaWorker.setPresetTemp(self.__temp)
+            # self.prasmaWorker.setPresetTemp(self.__temp) # TODO: setup
             self.tWorker.setPresetTemp(self.__temp)
             self.p1Worker.setPresetTemp(self.__temp)
             self.p2Worker.setPresetTemp(self.__temp)

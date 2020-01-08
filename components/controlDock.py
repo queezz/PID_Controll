@@ -9,8 +9,6 @@ class ControlDock(Dock):
 
     def __init__(self):
         super().__init__("Control")
-        #self.setStretch(30, 10)
-
         self.widget = pg.LayoutWidget()
 
         self.startBtn = QtGui.QPushButton("Start All")
@@ -99,6 +97,7 @@ class ControlDock(Dock):
             self.pressure2Status.setText(txt)
         else:
             return
+
     def setBwtext(self, ttype: ThreadType, value: float):
         txt = """<font size=5 color="#d1451b">{:.2f}</font>""".format(value)
         if ttype == ThreadType.PRASMA:

@@ -24,8 +24,8 @@ sorted(a)
 
 # %%
 """ csv """
-base_time = datetime(2019, 12, 27, 20, 21, 38)
-start_time = datetime(2019, 12, 27, 20, 17, 24)
+base_time = datetime(2019, 12, 27, 20, 21, 38)  # pyqt start time
+start_time = datetime(2019, 12, 27, 20, 17, 24) # qms start time
 d_time = (start_time - base_time).total_seconds()
 q_csv = pd.read_csv(d + "/S1_191227_201724.csv", header=36, encoding='utf-8')
 print(q_csv.columns)
@@ -44,6 +44,7 @@ calc_time('000:55:45.719')
 # %%
 data = np.array(q_csv)
 data[:, 1] = [calc_time(i) for i in data[:, 1]]
+
 """ plot qms """
 def plot_qms(data: np.ndarray, gray_start: datetime=None, gray_end: datetime=None, red_start: datetime=None, red_end: datetime=None):
     import matplotlib.pyplot as plt

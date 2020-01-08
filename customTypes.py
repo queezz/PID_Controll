@@ -41,9 +41,9 @@ class ThreadType(Enum):
         else:
             return ""
 
-    # TODO: calc
     def getCalcArray(self, data: np.ndarray):
         if self == self.PRASMA:
+            # TODO: calc
             return data
         elif self == self.TEMPERATURE:
             return maskTemp(data)
@@ -54,9 +54,9 @@ class ThreadType(Enum):
         else:
             return data
 
-    # TODO: calc
     def getCalcValue(self, data: float):
         if self == self.PRASMA:
+            # TODO: calc
             return data
         elif self == self.TEMPERATURE:
             return calcTemp(data)
