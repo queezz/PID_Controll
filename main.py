@@ -1,4 +1,4 @@
-import sys, datetime
+import sys, datetime,os
 import numpy as np
 import pandas as pd
 from pyqtgraph.Qt import QtCore, QtGui
@@ -6,6 +6,7 @@ from pyqtgraph.Qt import QtCore, QtGui
 from mainView import UIWindow
 from worker import Worker
 from customTypes import ThreadType, ScaleSize
+from readsettings import make_datafolders, get_datafolderpth
 
 """ debug """
 # def trap_exc_during_debug(*args):
@@ -54,6 +55,8 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.tWorker = None
         self.p1Worker = None
         self.p2Worker = None
+        make_datafolders()
+        self.datapth = get_datafolderpth()[0]
 
         self.showMain()
 
@@ -172,8 +175,17 @@ class MainWidget(QtCore.QObject, UIWindow):
         ttype = worker.getThreadType()
 
         df = pd.DataFrame(dtype=float, columns=["Time", "{}".format(ttype.value), "PresetTemperature"])
+
+        # creates file at the start, next data
+        # in the loop is placed in another file
+        # why not to save filename here, and reuse it later?
+
         df.to_csv(
-            "./data/{}/out_{:%Y%m%d%H%M%S}.csv".format(ttype.value, worker.getStartTime()),
+            os.path.join(
+                self.datapth,
+                f"{ttype.value}",
+                f"out_{worker.getStartTime():%Y%m%d_%H%M%S}.csv"
+            ),
             index=False
         )
         self.controlDock.setStatus(ttype, True)
@@ -233,7 +245,11 @@ class MainWidget(QtCore.QObject, UIWindow):
     def __save(self, data: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
         df = pd.DataFrame(data)
         df.to_csv(
-            "./data/{}/out_{:%Y%m%d%H%M%S}.csv".format(ttype.value, startTime),
+            os.path.join(
+                self.datapth,
+                f"{ttype.value}",
+                f"out_{startTime:%Y%m%d_%H%M%S}.csv"
+            ),
             mode="a",
             header=False,
             index=False

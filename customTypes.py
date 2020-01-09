@@ -4,11 +4,10 @@ from thermocouple import calcTemp, maskTemp
 from ionizationGauge import maskIonPres
 from pfeiffer import maskPfePres, calcPfePres
 
+threadnames = ["Prasma", "Temperature","Pressure1","Pressure2"]
+
 class ThreadType(Enum):
-    PRASMA = "Prasma"
-    TEMPERATURE = "Temperature"
-    PRESSURE1 = "Pressure1"
-    PRESSURE2 = "Pressure2"
+    PRASMA,TEMPERATURE,PRESSURE1,PRESSURE2 = threadnames 
 
     @classmethod
     def getEnum(cls, index: int):
