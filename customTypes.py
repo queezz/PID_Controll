@@ -5,7 +5,7 @@ from ionizationGauge import maskIonPres
 from pfeiffer import maskPfePres, calcPfePres
 
 class ThreadType(Enum):
-    PLASMA = "PLASMA"
+    PLASMA = "Plasma"
     TEMPERATURE = "Temperature"
     PRESSURE1 = "Pressure1"
     PRESSURE2 = "Pressure2"

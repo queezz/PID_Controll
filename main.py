@@ -38,20 +38,19 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.p2Data = None
 
         self.graph.removeItem(self.graph.praPl) # remove Plasma current plot
-        self.graph.removeItem(self.graph.pres2Pl) # remove P2 plot
         
         self.valuePraPlot = self.graph.praPl.plot(pen='#6ac600')
         self.valueTPlot = self.graph.tempPl.plot(pen='#5999ff')
-        self.valueP1Plot = self.graph.pres1Pl.plot(pen='#6ac600')
-        #self.valuePxPlot = self.graph.pres1Pl.plot(pen='#5999ff')
-        self.valueP2Plot = self.graph.pres1Pl.plot(pen='#5999ff')
+        self.valueP1Plot = self.graph.presPl.plot(pen='#6ac600')
+        #self.valuePxPlot = self.graph.presPl.plot(pen='#5999ff')
+        self.valueP2Plot = self.graph.presPl.plot(pen='#5999ff')
         
-        self.graph.pres1Pl.setLogMode(y=True)
-        self.graph.pres1Pl.setYRange(-8,3,0)
+        self.graph.presPl.setLogMode(y=True)
+        self.graph.presPl.setYRange(-8,3,0)
         self.graph.tempPl.setYRange(0,320,0)
-        #self.graph.pres1Pl.setDownsampling(auto=True,mode='mean')
+        #self.graph.presPl.setDownsampling(auto=True,mode='mean')
 
-        self.PLASMAWorker = None
+        self.plaWorker = None
         self.tWorker = None
         self.p1Worker = None
         self.p2Worker = None
@@ -88,7 +87,7 @@ class MainWidget(QtCore.QObject, UIWindow):
             thread.wait()
 
         self.__threads = []
-        # self.PLASMAWorker = Worker()
+        # self.plaWorker = Worker()
         self.tWorker = Worker()
         self.p1Worker = Worker()
         self.p2Worker = Worker()
@@ -98,7 +97,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         print("start threads: {}".format(now))
         self.logDock.progress.append("start threads: {}".format(now))
 
-        for index, worker in enumerate([self.PLASMAWorker, self.tWorker, self.p1Worker, self.p2Worker]):
+        for index, worker in enumerate([self.plaWorker, self.tWorker, self.p1Worker, self.p2Worker]):
             thread = QtCore.QThread()
             thread.setObjectName("thread_{}".format(index))
 
@@ -215,7 +214,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__temp = value
         self.registerDock.setTemp(self.__temp)
         if self.tWorker is not None:
-            # self.PLASMAWorker.setPresetTemp(self.__temp) # TODO: setup
+            # self.plaWorker.setPresetTemp(self.__temp) # TODO: setup
             self.tWorker.setPresetTemp(self.__temp)
             self.p1Worker.setPresetTemp(self.__temp)
             self.p2Worker.setPresetTemp(self.__temp)
@@ -227,7 +226,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         if self.tWorker is None:
             return
         elif ttype == ThreadType.PLASMA:
-            return self.PLASMAWorker
+            return self.plaWorker
         elif ttype == ThreadType.TEMPERATURE:
             return self.tWorker
         elif ttype == ThreadType.PRESSURE1:

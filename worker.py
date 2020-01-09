@@ -77,7 +77,7 @@ class Worker(QtCore.QObject):
         self.__abort = True
 
     # MARK: - Plot
-    def __plotPLASMA(self):
+    def __plotPlasma(self):
         # TODO: pinId, control
         self.__plot(3, 4, self.__controlCur)
 

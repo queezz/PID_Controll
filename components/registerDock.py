@@ -42,10 +42,6 @@ class RegisterDock(Dock):
         self.widget.layout.setVerticalSpacing(0)
         self.widget.layout.addItem(self.verticalSpacer)        
 
-    def __setLabelFont(self, text: str, color: str):
-        txt = "<font color={}><h4>{}</h4></font>".format(color, text)
-        return txt
-
     def setTemp(self, temperature: int):
         htmltag = '<font size=7 color="#d1451b">'
         setpoint = '<font size=5 color="#d1451b">setpoint: </font>'
