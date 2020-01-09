@@ -12,7 +12,7 @@ class RegisterDock(Dock):
         self.widget = pg.LayoutWidget()        
         self.tempBw = QtGui.QTextBrowser()        
         self.tempBw.setMinimumSize(QtCore.QSize(80,45))
-        self.tempBw.setMaximumHeight(45)
+        self.tempBw.setMaximumHeight(50)
         self.temperatureSB = QtGui.QSpinBox()
         self.temperatureSB.setMinimum(0)
         self.temperatureSB.setMaximum(600)

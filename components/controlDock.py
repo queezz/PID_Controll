@@ -22,39 +22,44 @@ class ControlDock(Dock):
         )
         self.quitBtn.setFont(QtGui.QFont('serif',16))
 
-        self.prasmaLabel = QtGui.QLabel(self.__setLabelFont("Plasma Current", "#000001"))
-        self.prasmaStatus = QtGui.QLabel(self.__setStatusFont(False))
-        self.valuePraBw = QtGui.QTextBrowser()
-        self.valuePraBw.setMaximumHeight(45)
-        self.valuePraBw.setMaximumWidth(130)
-        self.praScaleBtns = ScaleButtons()
+        #self.prasmaLabel = QtGui.QLabel(self.__setLabelFont("Plasma Current", "#000001"))
+        #self.prasmaStatus = QtGui.QLabel(self.__setStatusFont(False))
+        #self.valuePraBw = QtGui.QTextBrowser()
+        #self.valuePraBw.setMaximumHeight(45)
+        #self.valuePraBw.setMaximumWidth(130)
+        #self.praScaleBtns = ScaleButtons()
 
         self.tempLabel = QtGui.QLabel(self.__setLabelFont("Temperature", "#000001"))
-        self.tempStatus = QtGui.QLabel(self.__setStatusFont(False))
+        #self.tempStatus = QtGui.QLabel(self.__setStatusFont(False))
         self.valueTBw = QtGui.QTextBrowser()
-        self.valueTBw.setMaximumHeight(85)
+        self.valueTBw.setMaximumHeight(100)
         #self.valueTBw.setMaximumWidth(130)
         self.tScaleBtns = ScaleButtons()
+#        self.tScaleBtns.setStyleSheet(
+#            "QComboBox {color:#f9ffd9; background:#ed2a0c;}"            
+#        )        
+        #self.tScaleBtns.setFont(QtGui.QFont('serif',20))
+        
+        #self.pressure1Label = QtGui.QLabel(self.__setLabelFont("Pressure1", "#000001"))
+        #self.pressure1Status = QtGui.QLabel(self.__setStatusFont(False))
+        #self.valueP1Bw = QtGui.QTextBrowser()
+        #self.valueP1Bw.setMaximumHeight(45)
+        #self.valueP1Bw.setMaximumWidth(130)
+        #self.p1ScaleBtns = ScaleButtons()
 
-        self.pressure1Label = QtGui.QLabel(self.__setLabelFont("Pressure1", "#000001"))
-        self.pressure1Status = QtGui.QLabel(self.__setStatusFont(False))
-        self.valueP1Bw = QtGui.QTextBrowser()
-        self.valueP1Bw.setMaximumHeight(45)
-        self.valueP1Bw.setMaximumWidth(130)
-        self.p1ScaleBtns = ScaleButtons()
-
-        self.pressure2Label = QtGui.QLabel(self.__setLabelFont("Pressure2", "#000001"))
-        self.pressure2Status = QtGui.QLabel(self.__setStatusFont(False))
-        self.valueP2Bw = QtGui.QTextBrowser()
-        self.valueP2Bw.setMaximumHeight(45)
-        self.valueP2Bw.setMaximumWidth(130)
-        self.p2ScaleBtns = ScaleButtons()
+        #self.pressure2Label = QtGui.QLabel(self.__setLabelFont("Pressure2", "#000001"))
+        #self.pressure2Status = QtGui.QLabel(self.__setStatusFont(False))
+        #self.valueP2Bw = QtGui.QTextBrowser()
+        #self.valueP2Bw.setMaximumHeight(45)
+        #self.valueP2Bw.setMaximumWidth(130)
+        #self.p2ScaleBtns = ScaleButtons()
 
         self.FullNormSW = MySwitch()
         self.OnOffSW = OnOffSwitch()
         self.OnOffSW.setFont(QtGui.QFont('serif',16))
         
-        self.gaugeT = AnalogGaugeWidget() # Analog Gauge to show Temperature
+        # Analog Gauge to show Temperature
+        self.gaugeT = AnalogGaugeWidget()
         self.gaugeT.set_MinValue(0)
         self.gaugeT.set_MaxValue(400)
         self.gaugeT.set_total_scale_angle_size(180)
@@ -124,6 +129,9 @@ class ControlDock(Dock):
             return
 
     def setBwtext(self, ttype: ThreadType, value: float):
+        """ Update value in the value browser """
+        # Obsolete, exchanged to one browser for all, set-up in main.py
+        
         txt = f"""<font size=5 color="#d1451b">{value:.2f}</font>"""
         if ttype == ThreadType.PRASMA:
             self.valuePraBw.setText(txt)

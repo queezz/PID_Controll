@@ -57,24 +57,26 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.p2Worker = None
         make_datafolders()
         self.datapth = get_datafolderpth()[0]
-
+       
         self.showMain()
+
+    def __changeScale(self):
+        """ select how much data to display """
+        index = self.controlDock.tScaleBtns.selectBtn.currentIndex()
+        scale = ScaleSize.getEnum(index)
+        tps = list(ThreadType)
+        
+        for t in tps:            
+            worker = self.getWorker(t)
+            if not worker is None:
+                worker.setScaleSize(scale)
+        return
 
     def __setConnects(self):
         #self.controlDock.startBtn.clicked.connect(self.startThreads)
         #self.controlDock.stopBtn.clicked.connect(self.abortThreads)
-        self.controlDock.praScaleBtns.selectBtn.activated.connect(
-            lambda: self.setScale(self.controlDock.praScaleBtns.selectBtn.currentIndex(), ThreadType.PRASMA)
-        )
-        self.controlDock.tScaleBtns.selectBtn.activated.connect(
-            lambda: self.setScale(self.controlDock.tScaleBtns.selectBtn.currentIndex(), ThreadType.TEMPERATURE)
-        )
-        self.controlDock.p1ScaleBtns.selectBtn.activated.connect(
-            lambda: self.setScale(self.controlDock.p1ScaleBtns.selectBtn.currentIndex(), ThreadType.PRESSURE1)
-        )
-        self.controlDock.p2ScaleBtns.selectBtn.activated.connect(
-            lambda: self.setScale(self.controlDock.p2ScaleBtns.selectBtn.currentIndex(), ThreadType.PRESSURE2)
-        )
+        self.controlDock.tScaleBtns.selectBtn.activated.connect(self.__changeScale)
+        
         self.registerDock.registerBtn.clicked.connect(self.registerTemp)
         
         self.controlDock.FullNormSW.clicked.connect(self.fulltonormal)
@@ -142,21 +144,28 @@ class MainWidget(QtCore.QObject, UIWindow):
         for index, worker in enumerate([self.prasmaWorker, self.tWorker, self.p1Worker, self.p2Worker]):
             thread = QtCore.QThread()
             thread.setObjectName("thread_{}".format(index))
-
+            
+            # Plasma current not implemented, quit thread
             if index == 0:
-                scaleButtons = self.controlDock.praScaleBtns
-                # TODO: setup
                 thread.quit()
                 continue
-            elif index == 1:
-                scaleButtons = self.controlDock.tScaleBtns
-            elif index == 2:
-                scaleButtons = self.controlDock.p1ScaleBtns
-            elif index == 3:
-                scaleButtons = self.controlDock.p2ScaleBtns
-            else:
-                return
+                
+#            Separate scale asjustment removed
+#            if index == 0:
+#                scaleButtons = self.controlDock.praScaleBtns
+#                # TODO: setup
+#                thread.quit()
+#                continue
+#            elif index == 1:
+#                scaleButtons = self.controlDock.tScaleBtns
+#            elif index == 2:
+#                scaleButtons = self.controlDock.p1ScaleBtns
+#            elif index == 3:
+#                scaleButtons = self.controlDock.p2ScaleBtns
+#            else:
+#                return
 
+            scaleButtons = self.controlDock.tScaleBtns
             scaleIndex = scaleButtons.selectBtn.currentIndex()
             scale = ScaleSize.getEnum(scaleIndex)
             ttype = ThreadType.getEnum(index)
@@ -188,7 +197,7 @@ class MainWidget(QtCore.QObject, UIWindow):
             ),
             index=False
         )
-        self.controlDock.setStatus(ttype, True)
+        #self.controlDock.setStatus(ttype, True) # obsolete, removed labels
 
         thread.started.connect(worker.work)
         thread.start()
@@ -198,7 +207,9 @@ class MainWidget(QtCore.QObject, UIWindow):
     def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray,
                     ave: float, ttype: ThreadType, startTime: datetime.datetime):
         """ collect data on worker step """
-        #self.controlDock.setBwtext(ttype, ave)
+        
+        #self.controlDock.setBwtext(ttype, ave) #obsolete
+        
         self.currentvals[ttype] = ave
         txt = f"""<font size=5 color="#d1451b">
                 T =  {self.currentvals[ThreadType.TEMPERATURE]:.0f}<br>
@@ -294,7 +305,7 @@ class MainWidget(QtCore.QObject, UIWindow):
             self.p2Worker.setPresetTemp(self.__temp)
 
     def setScale(self, index: int, ttype: ThreadType):
-        scale = ScaleSize.getEnum(index)
+        scale = ScaleSize.getEnum(index)        
         worker = self.getWorker(ttype)
         worker.setScaleSize(scale)
 
