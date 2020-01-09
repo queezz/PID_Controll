@@ -2,7 +2,7 @@ import time, datetime, math
 import numpy as np
 from pyqtgraph.Qt import QtCore, QtGui
 from typing import Callable
-from customTypes import ThreadType, ScaleSize
+from customTypes import ThreadType
 
 TEST = False
 try:
@@ -23,14 +23,13 @@ class Worker(QtCore.QObject):
         super().__init__()
 
     def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication,
-                  startTime: datetime.datetime, value: int, scale: ScaleSize):
+                  startTime: datetime.datetime, value: int):
         self.__id = id
         self.__ttype = ttype
         self.__app = app
         self.__abort = False
         self.__startTime = startTime
         self.__presetTemp = value
-        self.__scaleSize = scale
         self.__rawData = np.zeros(shape=(10, 3))
         self.__calcData = np.zeros(shape=(10, 3))
 
@@ -38,17 +37,10 @@ class Worker(QtCore.QObject):
     def getThreadType(self):
         return self.__ttype
 
-    def getScaleSize(self):
-        return self.__scaleSize
-
     def getStartTime(self):
         return self.__startTime
 
     # MARK: - Setters
-    def setScaleSize(self, scale: ScaleSize):
-        self.__scaleSize = scale
-        return
-
     def setPresetTemp(self, newTemp: int):
         self.__presetTemp = newTemp
         return
@@ -60,7 +52,7 @@ class Worker(QtCore.QObject):
         if TEST:
             self.__test()
         else:
-            if self.__ttype == ThreadType.PRASMA:
+            if self.__ttype == ThreadType.PLASMA:
                 self.__test()
             elif self.__ttype == ThreadType.TEMPERATURE:
                 self.__plotTemp()
@@ -85,7 +77,7 @@ class Worker(QtCore.QObject):
         self.__abort = True
 
     # MARK: - Plot
-    def __plotPrasma(self):
+    def __plotPLASMA(self):
         # TODO: pinId, control
         self.__plot(3, 4, self.__controlCur)
 

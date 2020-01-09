@@ -6,7 +6,6 @@ from components.controlDock import ControlDock
 from components.logDock import LogDock
 from components.registerDock import RegisterDock
 from components.graph import Graph
-from components.onoffswitch import MySwitch 
 
 class UIWindow(object):
 
@@ -26,7 +25,6 @@ class UIWindow(object):
         self.graph = Graph()
 
         self.MainWindow.setGeometry(20, 50, 1280, 700)
-        #self.MainWindow.showFullScreen()
         self.MainWindow.setObjectName("Monitor")
         self.MainWindow.setWindowTitle("Data Logger")
         self.MainWindow.statusBar().showMessage('')

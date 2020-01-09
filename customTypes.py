@@ -5,7 +5,7 @@ from ionizationGauge import maskIonPres
 from pfeiffer import maskPfePres, calcPfePres
 
 class ThreadType(Enum):
-    PRASMA = "Prasma"
+    PLASMA = "PLASMA"
     TEMPERATURE = "Temperature"
     PRESSURE1 = "Pressure1"
     PRESSURE2 = "Pressure2"
@@ -13,7 +13,7 @@ class ThreadType(Enum):
     @classmethod
     def getEnum(cls, index: int):
         if index == 0:
-            return cls.PRASMA
+            return cls.PLASMA
         elif index == 1:
             return cls.TEMPERATURE
         elif index == 2:
@@ -24,7 +24,7 @@ class ThreadType(Enum):
             return
 
     def getGPIO(self):
-        if self == self.PRASMA:
+        if self == self.PLASMA:
             return 0
         elif self == self.TEMPERATURE:
             return 17
@@ -32,7 +32,7 @@ class ThreadType(Enum):
             return
 
     def getUnit(self):
-        if self == self.PRASMA:
+        if self == self.PLASMA:
             return "mA"
         elif self == self.TEMPERATURE:
             return "℃"
@@ -42,7 +42,7 @@ class ThreadType(Enum):
             return ""
 
     def getCalcArray(self, data: np.ndarray):
-        if self == self.PRASMA:
+        if self == self.PLASMA:
             # TODO: calc
             return data
         elif self == self.TEMPERATURE:
@@ -55,7 +55,7 @@ class ThreadType(Enum):
             return data
 
     def getCalcValue(self, data: float):
-        if self == self.PRASMA:
+        if self == self.PLASMA:
             # TODO: calc
             return data
         elif self == self.TEMPERATURE:

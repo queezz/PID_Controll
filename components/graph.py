@@ -12,13 +12,10 @@ class Graph(pg.GraphicsLayoutWidget):
         self.praPl = self.addPlot(row=0, col=0)
         # TODO: 単位
         self.praPl.setLabel('left', "Ip", units='mA')
-        #self.praPl.setLabel('bottom', "time", units='sec')
 
         self.tempPl = self.addPlot(row=1, col=0)
         labelStyle = {'color': '#FFF', 'font-size': '14pt'}
         self.tempPl.setLabel('left', "T", units=DEGREE_SMB+'C',**labelStyle)
-        #self.tempPl.setLabel('bottom', "time", units='sec')
-        #self.tempPl.getAxis('bottom').showLabel(show = False)
 
         self.pres1Pl = self.addPlot(row=2, col=0)
         self.pres1Pl.setLabel('left', "P", units='Torr',**labelStyle)
@@ -33,13 +30,9 @@ class Graph(pg.GraphicsLayoutWidget):
         self.tempPl.getAxis('left').setPen('#fcfcc7')
         font = QtGui.QFont('serif',15)
         self.tempPl.getAxis('left').tickFont = font
-        #self.tempPl.hideAxis('bottom')
         self.pres1Pl.getAxis('left').tickFont = font
         self.pres1Pl.getAxis('bottom').tickFont = font
         self.pres1Pl.getAxis('bottom').setStyle(tickTextOffset = 10)
-         
-        
-        #self.tempPl.getAxis('left').setStyle(tickTextOffset = 30)
 
 if __name__ == '__main__':
     pass

@@ -13,7 +13,6 @@ class ScaleButtons(pg.LayoutWidget):
         self.__setLayout()
 
     def __setLayout(self):
-        #self.addWidget(self.scaleLabel, 0, 0, 1, 1)
         self.addWidget(self.selectBtn, 1, 0, 1, 1)
 
     def __setSelect(self):
