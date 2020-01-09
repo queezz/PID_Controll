@@ -6,6 +6,7 @@ from components.controlDock import ControlDock
 from components.logDock import LogDock
 from components.registerDock import RegisterDock
 from components.graph import Graph
+from components.onoffswitch import MySwitch 
 
 class UIWindow(object):
 
