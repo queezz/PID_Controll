@@ -4,6 +4,7 @@ from pyqtgraph.Qt import QtGui
 from pyqtgraph.dockarea import Dock
 from customTypes import ThreadType
 from components.scaleButtons import ScaleButtons
+from components.onoffswitch import MySwitch 
 
 class ControlDock(Dock):
 
@@ -14,7 +15,7 @@ class ControlDock(Dock):
         self.startBtn = QtGui.QPushButton("Start All")
         self.stopBtn = QtGui.QPushButton("Stop All")
 
-        self.prasmaLabel = QtGui.QLabel(self.__setLabelFont("Prasma Current", "#000001"))
+        self.prasmaLabel = QtGui.QLabel(self.__setLabelFont("Plasma Current", "#000001"))
         self.prasmaStatus = QtGui.QLabel(self.__setStatusFont(False))
         self.valuePraBw = QtGui.QTextBrowser()
         self.valuePraBw.setMaximumHeight(45)
@@ -24,8 +25,8 @@ class ControlDock(Dock):
         self.tempLabel = QtGui.QLabel(self.__setLabelFont("Temperature", "#000001"))
         self.tempStatus = QtGui.QLabel(self.__setStatusFont(False))
         self.valueTBw = QtGui.QTextBrowser()
-        self.valueTBw.setMaximumHeight(45)
-        self.valueTBw.setMaximumWidth(130)
+        self.valueTBw.setMaximumHeight(85)
+        #self.valueTBw.setMaximumWidth(130)
         self.tScaleBtns = ScaleButtons()
 
         self.pressure1Label = QtGui.QLabel(self.__setLabelFont("Pressure1", "#000001"))
@@ -42,6 +43,8 @@ class ControlDock(Dock):
         self.valueP2Bw.setMaximumWidth(130)
         self.p2ScaleBtns = ScaleButtons()
 
+        self.onoffChk = MySwitch()
+
         self.__setLayout()
 
     def __setLayout(self):
@@ -50,26 +53,33 @@ class ControlDock(Dock):
         self.widget.addWidget(self.startBtn, 0, 0)
         self.widget.addWidget(self.stopBtn, 0, 1)
 
-        self.widget.addWidget(self.prasmaLabel, 1, 0)
-        self.widget.addWidget(self.prasmaStatus, 1, 1)
-        self.widget.addWidget(self.valuePraBw, 2, 0, 1, 1)
-        self.widget.addWidget(self.praScaleBtns, 2, 1, 1, 1)
+#        self.widget.addWidget(self.prasmaLabel, 1, 0)
+#        self.widget.addWidget(self.prasmaStatus, 1, 1)
+#        self.widget.addWidget(self.valuePraBw, 2, 0, 1, 1)
+#        self.widget.addWidget(self.praScaleBtns, 2, 1, 1, 1)
 
 
-        self.widget.addWidget(self.tempLabel, 3, 0)
-        self.widget.addWidget(self.tempStatus, 3, 1)
-        self.widget.addWidget(self.valueTBw, 4, 0, 1, 1)
-        self.widget.addWidget(self.tScaleBtns, 4, 1, 1, 1)
+#        self.widget.addWidget(self.tempLabel, 3, 0)
+#        self.widget.addWidget(self.tempStatus, 3, 1)
+        self.widget.addWidget(self.valueTBw, 1, 0,1,2)
+        self.widget.addWidget(self.tScaleBtns, 2, 0,1,2 )
 
-        self.widget.addWidget(self.pressure1Label, 5, 0)
-        self.widget.addWidget(self.pressure1Status, 5, 1)
-        self.widget.addWidget(self.valueP1Bw, 6, 0, 1, 1)
-        self.widget.addWidget(self.p1ScaleBtns, 6, 1, 1, 1)
+#        self.widget.addWidget(self.pressure1Label, 5, 0)
+#        self.widget.addWidget(self.pressure1Status, 5, 1)
+#        self.widget.addWidget(self.valueP1Bw, 6, 0, 1, 1)
+#        self.widget.addWidget(self.p1ScaleBtns, 6, 1, 1, 1)
 
-        self.widget.addWidget(self.pressure2Label, 7, 0)
-        self.widget.addWidget(self.pressure2Status, 7, 1)
-        self.widget.addWidget(self.valueP2Bw, 8, 0, 1, 1)
-        self.widget.addWidget(self.p2ScaleBtns, 8, 1, 1, 1)
+#        self.widget.addWidget(self.pressure2Label, 7, 0)
+#        self.widget.addWidget(self.pressure2Status, 7, 1)
+#        self.widget.addWidget(self.valueP2Bw, 8, 0, 1, 1)
+#        self.widget.addWidget(self.p2ScaleBtns, 8, 1, 1, 1)
+        
+        self.widget.addWidget(self.onoffChk,3,0) 
+        
+        self.verticalSpacer = QtGui.QSpacerItem(
+            0, 0, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding
+        )
+        self.widget.layout.addItem(self.verticalSpacer)
 
     def __setLabelFont(self, text: str, color: str):
         txt = "<font color={}><h3>{}</h3></font>".format(color, text)
@@ -94,7 +104,7 @@ class ControlDock(Dock):
             return
 
     def setBwtext(self, ttype: ThreadType, value: float):
-        txt = """<font size=5 color="#d1451b">{:.2f}</font>""".format(value)
+        txt = f"""<font size=5 color="#d1451b">{value:.2f}</font>"""
         if ttype == ThreadType.PRASMA:
             self.valuePraBw.setText(txt)
         elif ttype == ThreadType.TEMPERATURE:

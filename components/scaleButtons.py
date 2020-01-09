@@ -13,17 +13,15 @@ class ScaleButtons(pg.LayoutWidget):
         self.__setLayout()
 
     def __setLayout(self):
-        self.addWidget(self.scaleLabel, 0, 0, 1, 1)
+        #self.addWidget(self.scaleLabel, 0, 0, 1, 1)
         self.addWidget(self.selectBtn, 1, 0, 1, 1)
 
     def __setSelect(self):
-        self.selectBtn.addItem("Small")
-        self.selectBtn.addItem("Medium")
-        self.selectBtn.addItem("Large")
-        self.selectBtn.addItem("Full")
+        items = ["Small","Medium","Large","Full"]
+        [self.selectBtn.addItem(i) for i in items]
 
     def __setLabelFont(self, text: str, color: str):
-        txt = "<font color={}><h5>{}</h5></font>".format(color, text)
+        txt = f"<font color={color}><h5>{text}</h5></font>"
         return txt
 
 if __name__ == "__main__":

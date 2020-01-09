@@ -77,4 +77,3 @@ def plot_qms(data: np.ndarray, gray_start: datetime=None, gray_end: datetime=Non
 
 plot_qms(data)
 
-# %%

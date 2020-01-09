@@ -6,6 +6,7 @@ from components.controlDock import ControlDock
 from components.logDock import LogDock
 from components.registerDock import RegisterDock
 from components.graph import Graph
+from components.onoffswitch import MySwitch 
 
 class UIWindow(object):
 
@@ -19,10 +20,13 @@ class UIWindow(object):
         self.plotDock = Dock("Plots", size=(300, 400))
         self.controlDock = ControlDock()
         self.logDock = LogDock()
-        self.registerDock = RegisterDock()
+        self.registerDock = RegisterDock()        
+        [i.setStretch(*(10,20)) for i in [self.controlDock, self.logDock,self.registerDock]]
+        self.controlDock.setStretch(*(10,300))
         self.graph = Graph()
 
-        self.MainWindow.setGeometry(0, 20, 1280, 700)
+        self.MainWindow.setGeometry(20, 50, 1280, 700)
+        #self.MainWindow.showFullScreen()
         self.MainWindow.setObjectName("Monitor")
         self.MainWindow.setWindowTitle("Data Logger")
         self.MainWindow.statusBar().showMessage('')
