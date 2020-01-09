@@ -22,7 +22,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         super(self.__class__, self).__init__()
         self.__app = app
         self.__setConnects()
-        self.controlDock.stopBtn.setDisabled(True)
+        #self.controlDock.stopBtn.setDisabled(True)
         self.registerDock.setTemp(self.DEFAULT_TEMPERATURE)
 
         QtCore.QThread.currentThread().setObjectName("main")
@@ -58,8 +58,8 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.showMain()
 
     def __setConnects(self):
-        self.controlDock.startBtn.clicked.connect(self.startThreads)
-        self.controlDock.stopBtn.clicked.connect(self.abortThreads)
+        #self.controlDock.startBtn.clicked.connect(self.startThreads)
+        #self.controlDock.stopBtn.clicked.connect(self.abortThreads)
         self.controlDock.praScaleBtns.selectBtn.activated.connect(
             lambda: self.setScale(self.controlDock.praScaleBtns.selectBtn.currentIndex(), ThreadType.PRASMA)
         )
@@ -74,21 +74,50 @@ class MainWidget(QtCore.QObject, UIWindow):
         )
         self.registerDock.registerBtn.clicked.connect(self.registerTemp)
         
-        self.controlDock.onoffChk.clicked.connect(self.fulltonormal)
+        self.controlDock.FullNormSW.clicked.connect(self.fulltonormal)
+        self.controlDock.OnOffSW.clicked.connect(self.__onoff)
+        self.controlDock.quitBtn.clicked.connect(self.__quit)
         
+    def __quit(self):
+        """ terminate app """
+        self.__app.quit()   
+        
+    def __onoff(self):
+        """ prototype method to start and stop worker threads """
+        if self.controlDock.OnOffSW.isChecked():
+            print('aha')
+            self.startThreads()
+            self.controlDock.quitBtn.setEnabled(False)
+        else:
+            quit_msg = "Are you sure you want to stop data acquisition?"
+            reply = QtGui.QMessageBox.warning(
+                self.MainWindow,
+                'Message',
+                quit_msg,
+                QtGui.QMessageBox.Yes,
+                QtGui.QMessageBox.No
+            )
+            if reply == QtGui.QMessageBox.Yes:                
+                self.abortThreads()
+                self.controlDock.quitBtn.setEnabled(True)
+            else:
+                self.controlDock.OnOffSW.setChecked(True)                
+
     def fulltonormal(self):
        """ Change from full screen to normal view on click"""
-       if self.controlDock.onoffChk.isChecked():
+       if self.controlDock.FullNormSW.isChecked():
            self.MainWindow.showFullScreen()
+           self.controlDock.setStretch(*(10,300)) # minimize control dock width
        else:
            self.MainWindow.showNormal()
+           self.controlDock.setStretch(*(10,300)) # minimize control dock width
         
     # MARK: - Threads
     def startThreads(self):
         self.logDock.log.append("starting {} threads".format(len(ThreadType) - 1)) # TODO: setup
 
-        self.controlDock.startBtn.setDisabled(True)
-        self.controlDock.stopBtn.setEnabled(True)
+        #self.controlDock.startBtn.setDisabled(True)
+        #self.controlDock.stopBtn.setEnabled(True)
 
         self.__workers_done = 0
 
@@ -165,6 +194,10 @@ class MainWidget(QtCore.QObject, UIWindow):
                 P2 = {self.currentvals[ThreadType.PRESSURE2]:.2f}
         </font>"""
         self.controlDock.valueTBw.setText(txt) 
+        self.controlDock.gaugeT.update_value(
+            self.currentvals[ThreadType.TEMPERATURE]
+        )
+        
         worker = self.getWorker(ttype)
         scale = worker.getScaleSize().value
 
@@ -219,8 +252,8 @@ class MainWidget(QtCore.QObject, UIWindow):
         if self.__workers_done == len(ThreadType) - 1: # TODO: setup
             # self.abortThreads()   # not necessary
             self.logDock.log.append("No more plot workers active")
-            self.controlDock.startBtn.setEnabled(True)
-            self.controlDock.stopBtn.setDisabled(True)
+            #self.controlDock.startBtn.setEnabled(True)
+            #self.controlDock.stopBtn.setDisabled(True)
 
     @QtCore.pyqtSlot()
     def abortThreads(self):

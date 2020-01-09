@@ -25,7 +25,7 @@ class UIWindow(object):
         self.controlDock.setStretch(*(10,300))
         self.graph = Graph()
 
-        self.MainWindow.setGeometry(20, 50, 1280, 700)
+        self.MainWindow.setGeometry(20, 50, 1000, 600)
         #self.MainWindow.showFullScreen()
         self.MainWindow.setObjectName("Monitor")
         self.MainWindow.setWindowTitle("Data Logger")

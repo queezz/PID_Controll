@@ -39,7 +39,7 @@ class RegisterDock(Dock):
         self.verticalSpacer = QtGui.QSpacerItem(
             0, 0, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding
         )
-        self.widget.layout.setVerticalSpacing(0)
+        #self.widget.layout.setVerticalSpacing(0)
         self.widget.layout.addItem(self.verticalSpacer)        
 
     def __setLabelFont(self, text: str, color: str):
