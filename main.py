@@ -47,7 +47,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         
         self.graph.pres1Pl.setLogMode(y=True)
         self.graph.pres1Pl.setYRange(-8,3,0)
-        self.graph.tempPl.setYRange(0,500,0)
+        self.graph.tempPl.setYRange(0,320,0)
         #self.graph.pres1Pl.setDownsampling(auto=True,mode='mean')
 
         self.prasmaWorker = None
@@ -73,7 +73,16 @@ class MainWidget(QtCore.QObject, UIWindow):
             lambda: self.setScale(self.controlDock.p2ScaleBtns.selectBtn.currentIndex(), ThreadType.PRESSURE2)
         )
         self.registerDock.registerBtn.clicked.connect(self.registerTemp)
-
+        
+        self.controlDock.onoffChk.clicked.connect(self.fulltonormal)
+        
+    def fulltonormal(self):
+       """ Change from full screen to normal view on click"""
+       if self.controlDock.onoffChk.isChecked():
+           self.MainWindow.showFullScreen()
+       else:
+           self.MainWindow.showNormal()
+        
     # MARK: - Threads
     def startThreads(self):
         self.logDock.log.append("starting {} threads".format(len(ThreadType) - 1)) # TODO: setup
@@ -143,12 +152,19 @@ class MainWidget(QtCore.QObject, UIWindow):
         thread.started.connect(worker.work)
         thread.start()
 
+    currentvals = {ThreadType.PRASMA:0,ThreadType.TEMPERATURE:0,ThreadType.PRESSURE1:0,ThreadType.PRESSURE2:0}
     @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType, datetime.datetime)
     def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray,
                     ave: float, ttype: ThreadType, startTime: datetime.datetime):
         """ collect data on worker step """
-        self.controlDock.setBwtext(ttype, ave)
-
+        #self.controlDock.setBwtext(ttype, ave)
+        self.currentvals[ttype] = ave
+        txt = f"""<font size=5 color="#d1451b">
+                T =  {self.currentvals[ThreadType.TEMPERATURE]:.0f}<br>
+                P1 = {self.currentvals[ThreadType.PRESSURE1]:.2f}<br>
+                P2 = {self.currentvals[ThreadType.PRESSURE2]:.2f}
+        </font>"""
+        self.controlDock.valueTBw.setText(txt) 
         worker = self.getWorker(ttype)
         scale = worker.getScaleSize().value
 
