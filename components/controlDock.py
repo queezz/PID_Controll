@@ -32,7 +32,7 @@ class ControlDock(Dock):
         self.tempLabel = QtGui.QLabel(self.__setLabelFont("Temperature", "#000001"))
         #self.tempStatus = QtGui.QLabel(self.__setStatusFont(False))
         self.valueTBw = QtGui.QTextBrowser()
-        self.valueTBw.setMaximumHeight(100)
+        self.valueTBw.setMaximumHeight(110)
         #self.valueTBw.setMaximumWidth(130)
         self.tScaleBtns = ScaleButtons()
 #        self.tScaleBtns.setStyleSheet(

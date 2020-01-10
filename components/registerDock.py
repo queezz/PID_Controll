@@ -11,8 +11,8 @@ class RegisterDock(Dock):
         super().__init__("Membreane Heater")
         self.widget = pg.LayoutWidget()        
         self.tempBw = QtGui.QTextBrowser()        
-        self.tempBw.setMinimumSize(QtCore.QSize(80,45))
-        self.tempBw.setMaximumHeight(50)
+        self.tempBw.setMinimumSize(QtCore.QSize(80,60))
+        self.tempBw.setMaximumHeight(60)
         self.temperatureSB = QtGui.QSpinBox()
         self.temperatureSB.setMinimum(0)
         self.temperatureSB.setMaximum(600)
@@ -47,7 +47,7 @@ class RegisterDock(Dock):
         return txt
 
     def setTemp(self, temperature: int):
-        htmltag = '<font size=7 color="#d1451b">'
+        htmltag = '<font size=6 color="#d1451b">'
         setpoint = '<font size=5 color="#d1451b">setpoint: </font>'
         self.tempBw.setText(
             f'{setpoint}{htmltag}{temperature} {DEGREE_SMB}C</font>'

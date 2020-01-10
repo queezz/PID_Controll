@@ -271,7 +271,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.logDock.log.append("Worker #{} done".format(workerId))
         self.logDock.progress.append("-- Signal {} STOPPED".format(workerId))
         self.__workers_done += 1
-        self.controlDock.setStatus(ttype, False)
+        #self.controlDock.setStatus(ttype, False) # obsolete, removed labels
         worker = self.getWorker(ttype)
 
         self.setData(ttype)
