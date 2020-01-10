@@ -5,6 +5,19 @@ from typing import Callable
 from customTypes import ThreadType, ScaleSize
 
 TEST = False
+
+# Specify cable connections to ADC
+CHP1 = 15
+CHP2 = 16
+CHT  = 0
+
+# Raspi outputs
+
+
+TIMESLEEP = 0.015
+# Number of data points for collection, steps%STEP == 0
+STEP = 5
+
 try:
     import RPi.GPIO as GPIO
     from AIO import AIO_32_0RA_IRC as adc
@@ -90,40 +103,59 @@ class Worker(QtCore.QObject):
         self.__plot(3, 4, self.__controlCur)
 
     def __plotTemp(self):
-        self.__plot(0, adc.PGA.PGA_1_2544V, self.__controlTemp)
+        self.__plot(CHT, adc.PGA.PGA_1_2544V, self.__controlTemp)
 
     def __plotPress1(self):
-        self.__plot(15, adc.PGA.PGA_10_0352V)
+        self.__plot(CHP1, adc.PGA.PGA_10_0352V)
 
     def __plotPress2(self):
-        self.__plot(16, adc.PGA.PGA_10_0352V)
+        self.__plot(CHP2, adc.PGA.PGA_10_0352V)
 
     def __plot(self, pId: int, fscale: int, control: Callable[[float, int], int]=None):
-        aio = adc(0x49, 0x3e)
+        """ control - a method to control Temperature (or other)
+        control = self.__controlTemp for temperature control
+        """
+        
+        aio = adc(0x49, 0x3e) # instance of AIO_32_0RA_IRC from AIO.py
+        # Why this addresses?
+        
+        # CONTROL
         if not control is None:
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(self.__ttype.getGPIO(), GPIO.OUT)
             controlStep = -1
+
         totalStep = 0
         step = 0
+        
         while not (self.__abort):
-            time.sleep(0.15)
+            time.sleep(TIMESLEEP)
+            
+            # READ DATA
             voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             value = self.__ttype.getCalcValue(voltage)
 
+            # READ DATA
             #  I do not know why this is needed
-            aio.analog_read_volt(15, aio.DataRate.DR_860SPS, pga=2)
-            aio.analog_read_volt(16, aio.DataRate.DR_860SPS, pga=2)
+            #  What happens if these two lines are removed?
+            #  Just reading from two channels, right? Some communication problem?
+            aio.analog_read_volt(CHP1, aio.DataRate.DR_860SPS, pga=2)
+            aio.analog_read_volt(CHP2, aio.DataRate.DR_860SPS, pga=2)
 
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
-            if step%9 == 0 and step != 0:
+            if step%STEP == 0 and step != 0:
+                # average 10 points of data
                 aveValue = np.mean(self.__rawData[:, 1], dtype=float)
+                # convert vlots to actual value
                 aveValue = self.__ttype.getCalcValue(aveValue)
+                
+                # change control "steps"
                 if not control is None:
                     controlStep = control(aveValue, controlStep)
+                    
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
                 self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype, self.__startTime)
                 self.__rawData = np.zeros(shape=(10, 3))
@@ -136,6 +168,7 @@ class Worker(QtCore.QObject):
             if not control is None:
                 GPIO.output(17, controlStep > 0)
                 controlStep -= 1
+                
             self.__app.processEvents()
         else:
             if self.__rawData[step][0] == 0.0:
@@ -175,11 +208,11 @@ class Worker(QtCore.QObject):
         totalStep = 0
         step = 0
         while not (self.__abort):
-            time.sleep(0.2)
+            time.sleep(TIMESLEEP)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             self.__rawData[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
 
-            if step%9 == 0 and step != 0:
+            if step%STEP == 0 and step != 0:
                 average = np.mean(self.__rawData[:, 1], dtype=float)
                 average = self.__ttype.getCalcValue(average)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
