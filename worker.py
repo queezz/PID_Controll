@@ -43,8 +43,8 @@ class Worker(QtCore.QObject):
         self.__abort = False
         self.__startTime = startTime
         self.__presetTemp = value
-        self.__rawData = np.zeros(shape=(10, 3))
-        self.__calcData = np.zeros(shape=(10, 3))
+        self.__rawData = np.zeros(shape=(STEP, 3))
+        self.__calcData = np.zeros(shape=(STEP, 3))
 
     # MARK: - Getters
     def getThreadType(self):
@@ -138,7 +138,7 @@ class Worker(QtCore.QObject):
 
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
-            if step%STEP == 0 and step != 0:
+            if step%(STEP-1) == 0 and step != 0:
                 # average 10 points of data
                 aveValue = np.mean(self.__rawData[:, 1], dtype=float)
                 # convert vlots to actual value
@@ -150,8 +150,8 @@ class Worker(QtCore.QObject):
                     
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
                 self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype, self.__startTime)
-                self.__rawData = np.zeros(shape=(10, 3))
-                self.__calcData = np.zeros(shape=(10, 3))
+                self.__rawData = np.zeros(shape=(STEP, 3))
+                self.__calcData = np.zeros(shape=(STEP, 3))
                 step = 0
             else:
                 step += 1
@@ -202,15 +202,15 @@ class Worker(QtCore.QObject):
         while not (self.__abort):
             time.sleep(TIMESLEEP)
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            self.__rawData[step] = [deltaSeconds, np.random.normal(), self.__presetTemp]
+            self.__rawData[step] = [deltaSeconds, np.random.normal()/10000, self.__presetTemp]
 
-            if step%STEP == 0 and step != 0:
+            if step%(STEP-1) == 0 and step != 0:
                 average = np.mean(self.__rawData[:, 1], dtype=float)
                 average = self.__ttype.getCalcValue(average)
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
                 self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype, self.__startTime)
-                self.__rawData = np.zeros(shape=(10, 3))
-                self.__calcData = np.zeros(shape=(10, 3))
+                self.__rawData = np.zeros(shape=(STEP, 3))
+                self.__calcData = np.zeros(shape=(STEP, 3))
                 step = 0
             else:
                 step += 1

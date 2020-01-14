@@ -4,15 +4,15 @@ from thermocouple import calcTemp, maskTemp
 from ionizationGauge import maskIonPres
 from pfeiffer import maskPfePres, calcPfePres
 
-threadnames = ["Prasma", "Temperature","Pressure1","Pressure2"]
+threadnames = ["Plasma", "Temperature","Pressure1","Pressure2"]
 
 class ThreadType(Enum):
-    PRASMA,TEMPERATURE,PRESSURE1,PRESSURE2 = threadnames 
+    PLASMA,TEMPERATURE,PRESSURE1,PRESSURE2 = threadnames 
 
     @classmethod
     def getEnum(cls, index: int):
         if index == 0:
-            return cls.PRASMA
+            return cls.PLASMA
         elif index == 1:
             return cls.TEMPERATURE
         elif index == 2:
@@ -23,7 +23,7 @@ class ThreadType(Enum):
             return
 
     def getGPIO(self):
-        if self == self.PRASMA:
+        if self == self.PLASMA:
             return 0
         elif self == self.TEMPERATURE:
             return 17
@@ -31,7 +31,7 @@ class ThreadType(Enum):
             return
 
     def getUnit(self):
-        if self == self.PRASMA:
+        if self == self.PLASMA:
             return "mA"
         elif self == self.TEMPERATURE:
             return "℃"
@@ -41,7 +41,7 @@ class ThreadType(Enum):
             return ""
 
     def getCalcArray(self, data: np.ndarray):
-        if self == self.PRASMA:
+        if self == self.PLASMA:
             # TODO: calc
             return data
         elif self == self.TEMPERATURE:
@@ -54,7 +54,7 @@ class ThreadType(Enum):
             return data
 
     def getCalcValue(self, data: float):
-        if self == self.PRASMA:
+        if self == self.PLASMA:
             # TODO: calc
             return data
         elif self == self.TEMPERATURE:

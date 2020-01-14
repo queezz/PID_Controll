@@ -9,9 +9,9 @@ class Graph(pg.GraphicsLayoutWidget):
         super().__init__()
         self.setObjectName("graph")
 
-        self.praPl = self.addPlot(row=0, col=0)
+        self.plaPl = self.addPlot(row=0, col=0)
         # TODO: 単位
-        self.praPl.setLabel('left', "Ip", units='mA')
+        self.plaPl.setLabel('left', "Ip", units='mA')
 
         self.tempPl = self.addPlot(row=1, col=0)
         labelStyle = {'color': '#FFF', 'font-size': '14pt'}
