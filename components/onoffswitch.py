@@ -3,6 +3,13 @@ from PyQt5.QtCore import Qt, QRect
 import sys
 
 class MySwitch(QtWidgets.QPushButton):
+    radius = 10
+    width = 38
+    # 0 - On, 1 - Off
+    labels = ['FULL','NORM']
+    #colors = [Qt.green, Qt.red]
+    colors = [QtGui.QColor('#e9fac5'), QtGui.QColor('#8f94c2')]
+    
     def __init__(self, parent = None):
         super().__init__(parent)
         self.setCheckable(True)
@@ -10,11 +17,12 @@ class MySwitch(QtWidgets.QPushButton):
         self.setMinimumHeight(22)
 
     def paintEvent(self, event):
-        label = "FULL" if self.isChecked() else "NORM"
-        bg_color = Qt.green if self.isChecked() else Qt.red
+        radius = self.radius
+        width = self.width
+        
+        label = self.labels[0] if self.isChecked() else self.labels[1]
+        bg_color = self.colors[0] if self.isChecked() else self.colors[1]
 
-        radius = 10
-        width = 38
         center = self.rect().center()
 
         painter = QtGui.QPainter(self)
@@ -29,19 +37,19 @@ class MySwitch(QtWidgets.QPushButton):
         painter.drawRoundedRect(QRect(-width, -radius, 2*width, 2*radius), radius, radius)
         painter.setBrush(QtGui.QBrush(bg_color))
         sw_rect = QRect(-radius, -radius, width + radius, 2*radius)
+        
         if not self.isChecked():
             sw_rect.moveLeft(-width)
+            
         painter.drawRoundedRect(sw_rect, radius, radius)
         painter.drawText(sw_rect, Qt.AlignCenter, label)
 
+class OnOffSwitch(MySwitch):    
+    radius = 15
+    width = 40
+    # 0 - On, 1 - Off
+    labels = ['ON','OFF']
+    colors = [QtGui.QColor('#8df01d'), QtGui.QColor('#b89c76')]
+
 if __name__ == "__main__":
-#    if not QtWidgets.QApplication.instance():
-#        app = QtWidgets.QApplication(sys.argv)
-#    else:
-#        app = QtWidgets.QApplication.instance()
-#    MainWindow = QtWidgets.QMainWindow()
-#    ui        = Ui_MainWindow()
-#    ui.setupUi(MainWindow)
-#    MainWindow.show()
-#    app.exec()
     pass

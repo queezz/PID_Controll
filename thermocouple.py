@@ -1,15 +1,19 @@
 import math
 import numpy as np
+import tc
+
+AMBIENT = 20.9
 
 ''' thermocouple at membrane '''
 def maskTemp(voltages: np.ndarray):
     mask = np.where(voltages[:, 1] < 0.015)
     tmp = voltages[mask]
-    tmp[:, 1] = [calcTemp(i) for i in tmp[:, 1]]
+    #tmp[:, 1] = [calcTemp(i) for i in tmp[:, 1]]
+    tmp[:,1] = np.array([tc.Thermocouple.mv_to_typek(i) for i in tmp[:,1]/1e-3]) + AMBIENT
     return tmp
 
 def calcTemp(voltage: float):
-    base = 20.9
+    ambient = 20.9
     # V -> μV
     v = voltage * (1e6)
 
@@ -24,7 +28,7 @@ def calcTemp(voltage: float):
             vta = calcElec(t)
             kx = v-vta
         t -= jx
-    return t + base
+    return t + ambient
 
 #  calculate electromotive force
 def calcElec(tm: float):
@@ -33,28 +37,31 @@ def calcElec(tm: float):
     a = [0]*10
     b = [0]*10
     c = [0]*2
-    a[0]= 3.9450128025E01
-    a[1]= 2.3622373598E-2
-    a[2]=-3.2858906784E-4
-    a[3]=-4.9904828777E-6
-    a[4]=-6.7509059173E-8
-    a[5]=-5.7410327428E-10
-    a[6]=-3.1088872894E-12
-    a[7]=-1.0451609365E-14
-    a[8]=-1.9889266878E-17
-    a[9]=-1.6322697486E-20
-    b[0]= 3.8921204975E01
-    b[1]= 1.8558770032E-02
-    b[2]=-9.9457592874E-05
-    b[3]= 3.1840945719E-07
-    b[4]=-5.6072844889E-10
-    b[5]= 5.6075059059E-13
-    b[6]=-3.2020720003E-16
-    b[7]= 9.7151147152E-20
-    b[8]=-1.2104721275E-23
-    b[9]=-1.7600413686E01
-    c[0]=-1.183432E-04
-    c[1]= 1.185976E02
+    a = [
+            3.9450128025E01,
+            2.3622373598E-2,
+            -3.2858906784E-4,
+            -4.9904828777E-6,
+            -6.7509059173E-8,
+            -5.7410327428E-10,
+            -3.1088872894E-12,
+            -1.0451609365E-14,
+            -1.9889266878E-17,
+            -1.6322697486E-20,
+        ]
+    b = [
+            3.8921204975E01,
+            1.8558770032E-02,
+            -9.9457592874E-05,
+            3.1840945719E-07,
+            -5.6072844889E-10,
+            5.6075059059E-13,
+            -3.2020720003E-16,
+            9.7151147152E-20,
+            -1.2104721275E-23,
+            -1.7600413686E01,
+        ]
+    c = [-1.183432E-04, 1.185976E02]
 
     if tm < -270:
         pass
@@ -71,8 +78,14 @@ def calcElec(tm: float):
         pass
     return j
 
-if __name__ == "__main__":
+def run():
+    """ to run from command line, use following:
+    python -c 'import thermocouple as tc; tc.run()'
+    """
     print("input mv:")
     a = float(input())
     a /= (10**3)
     print(calcTemp(a))
+    
+if __name__ == "__main__":
+    pass
