@@ -46,6 +46,13 @@ class Worker(QtCore.QObject):
         self.__rawData = np.zeros(shape=(STEP, 3))
         self.__calcData = np.zeros(shape=(STEP, 3))
 
+        # self.__onLight + self.__offLight = 0.2
+        self.__onLight= 0.1
+        self.__offLight= 0.1
+
+        self.__sumE = 0
+        self.__exE = 0
+
     # MARK: - Getters
     def getThreadType(self):
         return self.__ttype
@@ -113,9 +120,10 @@ class Worker(QtCore.QObject):
         
         # CONTROL
         if not control is None:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(self.__ttype.getGPIO(), GPIO.OUT)
-            controlStep = -1
+            thread = QtCore.QThread()
+            thread.setObjectName("temaperature lamp")
+            thread.started(self.__temp)
+            thread.start()
 
         totalStep = 0
         step = 0
@@ -144,9 +152,8 @@ class Worker(QtCore.QObject):
                 # convert vlots to actual value
                 aveValue = self.__ttype.getCalcValue(aveValue)
                 
-                # change control "steps"
                 if not control is None:
-                    controlStep = control(aveValue, controlStep)
+                    self.__controlTemp(aveValue)
                     
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
                 self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype, self.__startTime)
@@ -155,12 +162,7 @@ class Worker(QtCore.QObject):
                 step = 0
             else:
                 step += 1
-            totalStep += 1
-
-            if not control is None:
-                GPIO.output(17, controlStep > 0)
-                controlStep -= 1
-                
+            totalStep += 1                
             self.__app.processEvents()
         else:
             if self.__rawData[step][0] == 0.0:
@@ -174,26 +176,58 @@ class Worker(QtCore.QObject):
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
             if not control is None:
-                GPIO.cleanup()
+                thread.quit()
+                thread.wait()
+                self.__sumE = 0
+
         self.sigDone.emit(self.__id, self.__ttype)
         return
 
     # MARK: - Control
-    def __controlTemp(self, aveTemp: float, steps: int):
+    def __controlTemp(self, aveTemp: float):
+        e = self.__presetTemp - aveTemp
+        self.__sumE += e
+
         # TODO: 調整
-        if steps <= 0:
-            d = self.__presetTemp - aveTemp
-            if d <= 1.5:
-                return -1
-            elif d >= 15:
-                return int(d*10)
-            else:
-                return int(d+1)
+        Kp = 0.1
+        Ki = 0.1
+        Kd = 0.1
+
+        # TODO: self._onLight, self.__offLightを変更する
+        if e >= 0:
+            per = Kp * e + Ki*self.__sumE + Kd*(e-self.__exE)
+            print(per)
         else:
-            return steps
+            self.__onLight = 0
+            self.__offLight = 0.2
+
+        self.__exE = e
+        # if steps <= 0:
+        #     d = self.__presetTemp - aveTemp
+        #     if d <= 1.5:
+        #         return -1
+        #     elif d >= 15:
+        #         return int(d*10)
+        #     else:
+        #         return int(d+1)
+        # else:
+        #     return steps
+
 
     def __controlCur(self, aveCur: float, steps: int):
         pass
+
+    def __temp(self):
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.__ttype.getGPIO(), GPIO.OUT)
+        pinNum = ThreadType.getGPIO(ThreadType.TEMPERATURE)
+        while not (self.__abort):
+            GPIO.output(pinNum, 1)
+            time.sleep(self.__onLight)
+            GPIO.output(pinNum, 0)
+            time.sleep(self.__offLight)
+        else:
+            GPIO.cleanup()
 
     # MARK: - Test
     def __test(self):
