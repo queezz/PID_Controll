@@ -23,13 +23,9 @@ class UIWindow(object):
         [i.setStretch(*(10,20)) for i in [self.controlDock, self.logDock,self.registerDock]]
         self.controlDock.setStretch(*(10,300))
         self.graph = Graph()
-
-<<<<<<< HEAD
-        self.MainWindow.setGeometry(20, 50, 1280, 700)
-=======
+        
         self.MainWindow.setGeometry(20, 50, 1000, 600)
         #self.MainWindow.showFullScreen()
->>>>>>> 3a4576ac061d1f190976018dac5adc0d1f46e468
         self.MainWindow.setObjectName("Monitor")
         self.MainWindow.setWindowTitle("Data Logger")
         self.MainWindow.statusBar().showMessage('')
