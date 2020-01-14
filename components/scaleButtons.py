@@ -9,6 +9,7 @@ class ScaleButtons(pg.LayoutWidget):
         super().__init__()
         self.scaleLabel = QtGui.QLabel(self.__setLabelFont("Scale:", "#000001"))
         self.selectBtn = QtGui.QComboBox()
+        self.selectBtn.setFont(QtGui.QFont('serif',18))
         self.__setSelect()
         self.__setLayout()
 
