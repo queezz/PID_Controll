@@ -377,6 +377,7 @@ class Thermocouple:
         elif 20.644 < mv <= 54.886:
             c = tab3
         else:
+            print(mv)
             raise ValueError("Voltage specified is out of range for Type K thermocouple")
 
         t = 0.0

@@ -14,5 +14,6 @@ def calcPfePres(voltage: float):
     return pres
 
 if __name__ == "__main__":
-    a = float(input())
-    print(calcPfePres(a))
+    # a = float(input())
+    # print(calcPfePres(a))
+    pass
