@@ -173,10 +173,11 @@ class Worker(QtCore.QObject):
         return
 
     # temperature plot
+    @QtCore.pyqtSlot()
     def __plotT(self):
         sensor = self.pi.spi_open(CHT, 1000000, 0)
 
-        eCurrent = ElectricCurrent(self.pi)
+        eCurrent = ElectricCurrent(self.pi, self.__app)
         thread = QtCore.QThread()
         thread.setObjectName("heater current")
         eCurrent.moveToThread(thread)
@@ -228,9 +229,9 @@ class Worker(QtCore.QObject):
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
             self.sigAbortHeater.emit()
+            self.__sumE = 0
             thread.quit()
             thread.wait()
-            self.__sumE = 0
             self.pi.spi_close(sensor)
             self.pi.stop()
 

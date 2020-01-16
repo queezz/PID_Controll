@@ -4,9 +4,10 @@ from customTypes import ThreadType
 
 # must inherit QtCore.QObject in order to use 'connect'
 class ElectricCurrent(QtCore.QObject):
-    def __init__(self, pi):
+    def __init__(self, pi, app):
         super().__init__()
         self.pi = pi
+        self.app = app
         # range 0~0.01
         self.__onLight = 0
         self.abort = False
@@ -26,6 +27,7 @@ class ElectricCurrent(QtCore.QObject):
             time.sleep(self.__onLight)
             self.pi.write(pinNum, 0)
             time.sleep(0.01-self.__onLight)
+            self.app.processEvents()
         else:
             self.pi.stop()
 
