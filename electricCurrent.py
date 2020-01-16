@@ -9,6 +9,7 @@ class ElectricCurrent(QtCore.QObject):
         self.pi = pi
         # range 0~0.01
         self.__onLight = 0
+        self.abort = False
 
     # MARK: setter
     def setOnLight(self, value: float):
@@ -20,7 +21,7 @@ class ElectricCurrent(QtCore.QObject):
         self.__setThread()
         pinNum = ThreadType.getGPIO(ThreadType.TEMPERATURE)
         self.pi.set_mode(pinNum, pigpio.OUTPUT)
-        while True:
+        while not self.abort:
             self.pi.write(pinNum, 1)
             time.sleep(self.__onLight)
             self.pi.write(pinNum, 0)
@@ -31,6 +32,10 @@ class ElectricCurrent(QtCore.QObject):
     def __setThread(self):
         threadName = QtCore.QThread.currentThread().objectName()
         threadId = int(QtCore.QThread.currentThreadId())
+    
+    @QtCore.pyqtSlot()
+    def setAbort(self):
+        self.abort = True
 
 if __name__ == "__main__":
     pass

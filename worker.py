@@ -33,6 +33,8 @@ class Worker(QtCore.QObject):
     sigDone = QtCore.pyqtSignal(int, ThreadType)
     sigMsg = QtCore.pyqtSignal(str)
 
+    sigAbortHeater = QtCore.pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
@@ -178,7 +180,8 @@ class Worker(QtCore.QObject):
         thread = QtCore.QThread()
         thread.setObjectName("heater current")
         eCurrent.moveToThread(thread)
-        thread.started.connect(eCurrent.temp)
+        thread.started.connect(eCurrent.work)
+        self.sigAbortHeater.connect(eCurrent.setAbort)
         thread.start()
 
         totalStep = 0
@@ -224,6 +227,7 @@ class Worker(QtCore.QObject):
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
+            self.sigAbortHeater.emit()
             thread.quit()
             thread.wait()
             self.__sumE = 0
