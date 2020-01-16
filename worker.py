@@ -1,15 +1,16 @@
-import time, datetime, math
+import time, datetime
 import numpy as np
 from pyqtgraph.Qt import QtCore, QtGui
 from typing import Callable
 from customTypes import ThreadType
+from electricCurrent import ElectricCurrent
 
 TEST = False
 
 # Specify cable connections to ADC
 CHP1 = 15
 CHP2 = 16
-CHT  = 0
+CHT  = 1
 
 # Raspi outputs
 
@@ -19,10 +20,10 @@ TIMESLEEP = 0.015
 STEP = 5
 
 try:
-    import RPi.GPIO as GPIO
     from AIO import AIO_32_0RA_IRC as adc
+    import pigpio
 except:
-    print("no RPi.GPIO or AIO")
+    print("no pigpio or AIO")
     TEST = True
 
 # must inherit QtCore.QObject in order to use 'connect'
@@ -46,12 +47,11 @@ class Worker(QtCore.QObject):
         self.__rawData = np.zeros(shape=(STEP, 3))
         self.__calcData = np.zeros(shape=(STEP, 3))
 
-        # self.__onLight + self.__offLight = 0.2
-        self.__onLight= 0.1
-        self.__offLight= 0.1
-
-        self.__sumE = 0
-        self.__exE = 0
+        if not TEST:
+            self.pi = pigpio.pi()
+            self.__onLight= 0.1
+            self.__sumE = 0
+            self.__exE = 0
 
     # MARK: - Getters
     def getThreadType(self):
@@ -99,10 +99,11 @@ class Worker(QtCore.QObject):
     # MARK: - Plot
     def __plotPlasma(self):
         # TODO: pinId, control
-        self.__plot(3, 4, self.__controlCur)
+        self.__plot(3, 4)
 
     def __plotTemp(self):
-        self.__plot(CHT, adc.PGA.PGA_1_2544V, self.__controlTemp)
+        TIMESLEEP = 0.25
+        self.__plotT()
 
     def __plotPress1(self):
         self.__plot(CHP1, adc.PGA.PGA_10_0352V)
@@ -110,7 +111,7 @@ class Worker(QtCore.QObject):
     def __plotPress2(self):
         self.__plot(CHP2, adc.PGA.PGA_10_0352V)
 
-    def __plot(self, pId: int, fscale: int, control: Callable[[float, int], int]=None):
+    def __plot(self, pId: int, fscale: int):
         """ control - a method to control Temperature (or other)
         control = self.__controlTemp for temperature control
         """
@@ -118,13 +119,6 @@ class Worker(QtCore.QObject):
         aio = adc(0x49, 0x3e) # instance of AIO_32_0RA_IRC from AIO.py
         # Why this addresses?
         
-        # CONTROL
-        if not control is None:
-            thread = QtCore.QThread()
-            thread.setObjectName("temaperature lamp")
-            thread.started(self.__temp)
-            thread.start()
-
         totalStep = 0
         step = 0
         
@@ -151,9 +145,6 @@ class Worker(QtCore.QObject):
                 aveValue = np.mean(self.__rawData[:, 1], dtype=float)
                 # convert vlots to actual value
                 aveValue = self.__ttype.getCalcValue(aveValue)
-                
-                if not control is None:
-                    self.__controlTemp(aveValue)
                     
                 self.__calcData = self.__ttype.getCalcArray(self.__rawData)
                 self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype, self.__startTime)
@@ -175,59 +166,94 @@ class Worker(QtCore.QObject):
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
-            if not control is None:
-                thread.quit()
-                thread.wait()
-                self.__sumE = 0
 
         self.sigDone.emit(self.__id, self.__ttype)
         return
 
+    # temperature plot
+    def __plotT(self):
+        sensor = self.pi.spi_open(CHT, 1000000, 0)
+
+        eCurrent = ElectricCurrent(self.pi)
+        thread = QtCore.QThread()
+        thread.setObjectName("heater current")
+        Ecur.moveToThread(thread)
+        thread.started.connect(eCurrent.temp)
+        thread.start()
+
+        totalStep = 0
+        step = 0
+
+        while not (self.__abort):
+            time.sleep(TIMESLEEP)
+            temp = -1000
+
+            # READ DATA
+            c, d = self.pi.spi_read(sensor, 2) # if c==2: ok else: ng
+            if c == 2:
+                word = (d[0]<<8) | d[1]
+                if (word & 0x8006) == 0: # Bits 15, 2, and 1 should be zero.
+                    temp = (word >> 3)/4.0
+                else:
+                    print("bad reading {:b}".format(word))
+
+            deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
+            self.__rawData[step] = [deltaSeconds, temp, self.__presetTemp]
+
+            if step%(STEP-1) == 0 and step != 0:
+                # average 10 points of data
+                aveValue = np.mean(self.__rawData[:, 1], dtype=float)
+
+                # CONTROL
+                self.__controlTemp(aveValue, eCurrent)
+                
+                self.sigStep.emit(self.__rawData, self.__rawData, aveValue, self.__ttype, self.__startTime)
+                self.__rawData = np.zeros(shape=(STEP, 3))
+                step = 0
+            else:
+                step += 1
+            totalStep += 1                
+            self.__app.processEvents()
+
+        else:
+            if self.__rawData[step][0] == 0.0:
+                step -= 1
+            if step > -1:
+                aveValue = np.mean(self.__rawData[:step+1][1], dtype=float)
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__rawData[:step+1, :], aveValue, self.__ttype, self.__startTime)
+            self.sigMsg.emit(
+                "Worker #{} aborting work at step {}".format(self.__id, totalStep)
+            )
+            thread.quit()
+            thread.wait()
+            self.__sumE = 0
+            self.pi.spi_close(sensor)
+            self.pi.stop()
+
+        self.sigDone.emit(self.__id, self.__ttype)
+
     # MARK: - Control
-    def __controlTemp(self, aveTemp: float):
+    def __controlTemp(self, aveTemp: float, eCurrent: ElectricCurrent):
         e = self.__presetTemp - aveTemp
-        self.__sumE += e
+        integral = self.__sumE + e * TIMESLEEP
+        derivative = (e - self.__exE) / TIMESLEEP
 
         # TODO: 調整
-        Kp = 0.1
-        Ki = 0.1
-        Kd = 0.1
+        Kp = 1
+        Ki = 0
+        Kd = 0
 
-        # TODO: self._onLight, self.__offLightを変更する
+        # TODO: self._onLight を変更する
         if e >= 0:
-            per = Kp * e + Ki*self.__sumE + Kd*(e-self.__exE)
-            print(per)
+            output = Kp * e + Ki * integral + Kd * derivative
+            print(output, self.__presetTemp, aveTemp)
+
+            # eCurrent.setOnLight(0.01*per/100)
         else:
             self.__onLight = 0
-            self.__offLight = 0.2
 
         self.__exE = e
-        # if steps <= 0:
-        #     d = self.__presetTemp - aveTemp
-        #     if d <= 1.5:
-        #         return -1
-        #     elif d >= 15:
-        #         return int(d*10)
-        #     else:
-        #         return int(d+1)
-        # else:
-        #     return steps
-
-
-    def __controlCur(self, aveCur: float, steps: int):
-        pass
-
-    def __temp(self):
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.__ttype.getGPIO(), GPIO.OUT)
-        pinNum = ThreadType.getGPIO(ThreadType.TEMPERATURE)
-        while not (self.__abort):
-            GPIO.output(pinNum, 1)
-            time.sleep(self.__onLight)
-            GPIO.output(pinNum, 0)
-            time.sleep(self.__offLight)
-        else:
-            GPIO.cleanup()
+        self.__sumE = integral
 
     # MARK: - Test
     def __test(self):
