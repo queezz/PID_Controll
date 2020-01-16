@@ -177,7 +177,7 @@ class Worker(QtCore.QObject):
         eCurrent = ElectricCurrent(self.pi)
         thread = QtCore.QThread()
         thread.setObjectName("heater current")
-        Ecur.moveToThread(thread)
+        eCurrent.moveToThread(thread)
         thread.started.connect(eCurrent.temp)
         thread.start()
 
