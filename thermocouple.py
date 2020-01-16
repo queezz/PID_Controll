@@ -8,7 +8,7 @@ AMBIENT = 20.9
 def maskTemp(voltages: np.ndarray):
     mask = np.where(voltages[:, 1] < 0.015)
     tmp = voltages[mask]
-    tmp[:,1] = [tc.Thermocouple.mv_to_typek(i) + AMBIENT for i in tmp[:,1]/1e-3]
+    tmp[:,1] = [calcTemp(i) for i in tmp[:,1]]
     return tmp
 
 def calcTemp(voltage: float):
@@ -27,3 +27,4 @@ def run():
     
 if __name__ == "__main__":
     pass
+    # run()
