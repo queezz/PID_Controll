@@ -250,7 +250,6 @@ class MainWidget(QtCore.QObject, UIWindow):
         for thread, worker in self.__threads:
             thread.quit()
             thread.wait()
-
         self.logDock.log.append("All threads exited")
 
     # MARK: - Methods

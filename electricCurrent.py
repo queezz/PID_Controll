@@ -23,13 +23,14 @@ class ElectricCurrent(QtCore.QObject):
         pinNum = ThreadType.getGPIO(ThreadType.TEMPERATURE)
         self.pi.set_mode(pinNum, pigpio.OUTPUT)
         while not self.abort:
-            self.pi.write(pinNum, 1)
-            time.sleep(self.__onLight)
-            self.pi.write(pinNum, 0)
-            time.sleep(0.01-self.__onLight)
+            if self.__onLight == 0:
+                time.sleep(0.01)
+            else:
+                self.pi.write(pinNum, 1)
+                time.sleep(min(self.__onLight, 0.01))
+                self.pi.write(pinNum, 0)
+                time.sleep(max(0.01-self.__onLight, 0))
             self.app.processEvents()
-        else:
-            self.pi.stop()
 
     def __setThread(self):
         threadName = QtCore.QThread.currentThread().objectName()

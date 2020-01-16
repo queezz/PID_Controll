@@ -104,7 +104,6 @@ class Worker(QtCore.QObject):
         self.__plot(3, 4)
 
     def __plotTemp(self):
-        TIMESLEEP = 0.25
         self.__plotT()
 
     def __plotPress1(self):
@@ -189,7 +188,7 @@ class Worker(QtCore.QObject):
         step = 0
 
         while not (self.__abort):
-            time.sleep(TIMESLEEP)
+            time.sleep(0.25)
             temp = -1000
 
             # READ DATA
@@ -244,19 +243,20 @@ class Worker(QtCore.QObject):
         derivative = (e - self.__exE) / TIMESLEEP
 
         # TODO: 調整
-        Kp = 1
-        Ki = 0
+        Kp = 3.5
+        Ki = 0.06
         Kd = 0
 
         # TODO: self._onLight を変更する
         if e >= 0:
             output = Kp * e + Ki * integral + Kd * derivative
-            print(output, self.__presetTemp, aveTemp)
+            output = output * 0.0002 
 
-            # eCurrent.setOnLight(0.01*per/100)
+
+            print(output)
+            eCurrent.setOnLight(max(output, 0))
         else:
-            self.__onLight = 0
-
+            eCurrent.setOnLight(0)
         self.__exE = e
         self.__sumE = integral
 
