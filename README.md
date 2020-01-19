@@ -42,6 +42,34 @@ The analog signals from vacuum gauges, 0 - 10 V, and the K-type thermocouple, 0 
 - RPi.GPIO
 ```
 
+`pyqtgraph` requires either pyqt5 or pyside. To install pyqt5, use `apt-get`:
+
+```py
+sudo apt-get update
+sudo apt-get install qt5-default pyqt5-dev pyqt5-dev-tools
+```
+
+RPi.GPIO:
+
+```
+sudo apt-get update
+sudo apt-get install rpi.gpio
+```
+
+python3-smbus:
+
+```
+python3 -m pip install smbus --user
+```
+
+or
+
+```
+sudo apt-get install python3-smbus
+```
+
+
+
 # 3. Usage
 
 ## 3.1 start Logger
