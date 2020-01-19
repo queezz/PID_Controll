@@ -9,37 +9,26 @@ class Graph(pg.GraphicsLayoutWidget):
         super().__init__()
         self.setObjectName("graph")
 
-        self.praPl = self.addPlot(row=0, col=0)
+        self.plaPl = self.addPlot(row=0, col=0)
         # TODO: 単位
-        self.praPl.setLabel('left', "Ip", units='mA')
-        #self.praPl.setLabel('bottom', "time", units='sec')
+        self.plaPl.setLabel('left', "Ip", units='mA')
 
         self.tempPl = self.addPlot(row=1, col=0)
         labelStyle = {'color': '#FFF', 'font-size': '14pt'}
         self.tempPl.setLabel('left', "T", units=DEGREE_SMB+'C',**labelStyle)
-        #self.tempPl.setLabel('bottom', "time", units='sec')
-        #self.tempPl.getAxis('bottom').showLabel(show = False)
 
-        self.pres1Pl = self.addPlot(row=2, col=0)
-        self.pres1Pl.setLabel('left', "P", units='Torr',**labelStyle)
-        self.pres1Pl.setLabel('bottom', "time", units='sec',**labelStyle)
-
-        self.pres2Pl = self.addPlot(row=3, col=0)
-        self.pres2Pl.setLabel('left', "pressure2", units='Torr',**labelStyle)
-        self.pres2Pl.setLabel('bottom', "time", units='sec')
+        self.presPl = self.addPlot(row=2, col=0)
+        self.presPl.setLabel('left', "P", units='Torr',**labelStyle)
+        self.presPl.setLabel('bottom', "time", units='sec',**labelStyle)
         
         self.setBackground(background='#25272b')
                
         self.tempPl.getAxis('left').setPen('#fcfcc7')
         font = QtGui.QFont('serif',15)
         self.tempPl.getAxis('left').tickFont = font
-        #self.tempPl.hideAxis('bottom')
-        self.pres1Pl.getAxis('left').tickFont = font
-        self.pres1Pl.getAxis('bottom').tickFont = font
-        self.pres1Pl.getAxis('bottom').setStyle(tickTextOffset = 10)
-         
-        
-        #self.tempPl.getAxis('left').setStyle(tickTextOffset = 30)
+        self.presPl.getAxis('left').tickFont = font
+        self.presPl.getAxis('bottom').tickFont = font
+        self.presPl.getAxis('bottom').setStyle(tickTextOffset = 10)
 
 if __name__ == '__main__':
     pass

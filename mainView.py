@@ -6,7 +6,6 @@ from components.controlDock import ControlDock
 from components.logDock import LogDock
 from components.registerDock import RegisterDock
 from components.graph import Graph
-from components.onoffswitch import MySwitch 
 
 class UIWindow(object):
 
@@ -24,7 +23,7 @@ class UIWindow(object):
         [i.setStretch(*(10,20)) for i in [self.controlDock, self.logDock,self.registerDock]]
         self.controlDock.setStretch(*(10,300))
         self.graph = Graph()
-
+        
         self.MainWindow.setGeometry(20, 50, 1000, 600)
         #self.MainWindow.showFullScreen()
         self.MainWindow.setObjectName("Monitor")
