@@ -171,18 +171,23 @@ class Worker(QtCore.QObject):
         self.sigDone.emit(self.__id, self.__ttype)
         return
 
+    TT = TRUE
     # temperature plot
     @QtCore.pyqtSlot()
     def __plotT(self):
         sensor = self.pi.spi_open(CHT, 1000000, 0)
-
-        eCurrent = ElectricCurrent(self.pi, self.__app)
-        thread = QtCore.QThread()
-        thread.setObjectName("heater current")
-        eCurrent.moveToThread(thread)
-        thread.started.connect(eCurrent.work)
-        self.sigAbortHeater.connect(eCurrent.setAbort)
-        thread.start()
+        if TT:
+            eCurrent = ElectricCurrent(self.pi, self.__app)
+            thread = QtCore.QThread()
+            thread.setObjectName("heater current")
+            eCurrent.moveToThread(thread)
+            thread.started.connect(eCurrent.work)
+            self.sigAbortHeater.connect(eCurrent.setAbort)
+            thread.start()
+        else:
+            pinNum = ThreadType.getGPIO(ThreadType.TEMPERATURE)
+            self.pi.set_mode(pinNum, pigpio.OUTPUT)
+            controlStep = -1
 
         totalStep = 0
         step = 0
@@ -208,14 +213,20 @@ class Worker(QtCore.QObject):
                 aveValue = np.mean(self.__rawData[:, 1], dtype=float)
 
                 # CONTROL
-                self.__controlTemp(aveValue, eCurrent)
+                if TT:
+                    self.__controlTemp(aveValue, eCurrent)
+                else:
+                    controlStep = self.__controlTemp1(aveValue, controlStep)
                 
                 self.sigStep.emit(self.__rawData, self.__rawData, aveValue, self.__ttype, self.__startTime)
                 self.__rawData = np.zeros(shape=(STEP, 3))
                 step = 0
             else:
                 step += 1
-            totalStep += 1                
+            totalStep += 1
+            if not TT:
+                self.pi.write(pinNum, controlStep>0)
+                controlStep -= 1           
             self.__app.processEvents()
 
         else:
@@ -227,10 +238,11 @@ class Worker(QtCore.QObject):
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
-            self.sigAbortHeater.emit()
-            self.__sumE = 0
-            thread.quit()
-            thread.wait()
+            if TT:
+                self.sigAbortHeater.emit()
+                self.__sumE = 0
+                thread.quit()
+                thread.wait()
             self.pi.spi_close(sensor)
             self.pi.stop()
 
@@ -259,6 +271,22 @@ class Worker(QtCore.QObject):
             eCurrent.setOnLight(0)
         self.__exE = e
         self.__sumE = integral
+
+    def __controlTemp1(self, aveTemp: float, steps: int):
+        # TODO: 調整
+        if steps <= 0:
+            d = self.__presetTemp - aveTemp
+            if d <= 1.5:
+                return -1
+            elif d >= 15:
+                return int(d*10)
+            else:
+                return int(d+1)
+        else:
+            return steps
+
+    def __controlCur(self, aveCur: float, steps: int):
+        pass
 
     # MARK: - Test
     def __test(self):
