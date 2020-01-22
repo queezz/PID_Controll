@@ -83,3 +83,33 @@ $ pyton3 main.py
 ### Data folder
 
 The data folder name and location is stored in the settings file, .setings - a csv file. By default the data folder is placed relatively to the parent directory in `../data`.
+
+
+
+# 4. What is where
+
+In the `Worker` thread, `worker.py` class from `customTypes.py` has method `getCalcValue` for each type of  signal, which calls a method to convert signal into data.
+
+
+
+`customTypes.py`:
+
+```python
+def getCalcValue(self, data: float):
+    if self == self.PLASMA:
+        # TODO: calc
+        return data
+    elif self == self.TEMPERATURE:
+        return calcTemp(data)
+    elif self == self.PRESSURE1:
+        return data
+    elif self == self.PRESSURE2:
+        return calcPfePres(data)
+    else:
+        return data
+```
+
+
+## Pressure from Ionization Gauge Vacuumeter
+
+`IGmode` and `IGrange` determine log or normal scale, as well as the multiplier for normal scale. A set method is defined in the `worker.py`. The mode will be sent to `getCalcValue` method, which has to call `calcIGPressure` method with this parameters.

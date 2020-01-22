@@ -1,4 +1,9 @@
-import time, pigpio
+import time
+try:
+	import pigpio
+except:
+	print('no pigpio module, continue for a test')
+
 from pyqtgraph.Qt import QtCore
 from customTypes import ThreadType
 

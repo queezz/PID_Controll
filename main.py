@@ -23,7 +23,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         super(self.__class__, self).__init__()
         self.__app = app
         self.__setConnects()
-        self.registerDock.setTemp(self.DEFAULT_TEMPERATURE)
+        self.registerDock.setTemp(self.DEFAULT_TEMPERATURE,'---')
 
         QtCore.QThread.currentThread().setObjectName("main")
 
@@ -67,6 +67,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.controlDock.scaleBtn.selectBtn.activated.connect(self.__changeScale)
         
         self.registerDock.registerBtn.clicked.connect(self.registerTemp)
+        self.controlDock.IGmode.currentIndexChanged.connect(self.updateIGmode)
         
         self.controlDock.FullNormSW.clicked.connect(self.fulltonormal)
         self.controlDock.OnOffSW.clicked.connect(self.__onoff)
@@ -176,8 +177,10 @@ class MainWidget(QtCore.QObject, UIWindow):
         """ collect data on worker step """
         
         self.currentvals[ttype] = ave
+        # "T =  {self.currentvals[ThreadType.TEMPERATURE]:.0f}<br>"
+        temp_now = f"{self.currentvals[ThreadType.TEMPERATURE]:.0f}"
+        self.registerDock.setTempText(self.__temp,temp_now)
         txt = f"""<font size=5 color="#d1451b">
-                T =  {self.currentvals[ThreadType.TEMPERATURE]:.0f}<br>
                 P1 = {self.currentvals[ThreadType.PRESSURE1]:.2f}<br>
                 P2 = {self.currentvals[ThreadType.PRESSURE2]:.2f}
         </font>"""
@@ -257,12 +260,24 @@ class MainWidget(QtCore.QObject, UIWindow):
     def registerTemp(self):
         value = self.registerDock.temperatureSB.value()
         self.__temp = value
-        self.registerDock.setTemp(self.__temp)
+        temp_now = self.currentvals[ThreadType.TEMPERATURE]
+        self.registerDock.setTemp(self.__temp,f'{temp_now:.0f}')
         if self.tWorker is not None:
             # self.plasmaWorker.setPresetTemp(self.__temp) # TODO: setup
             self.tWorker.setPresetTemp(self.__temp)
             self.p1Worker.setPresetTemp(self.__temp)
             self.p2Worker.setPresetTemp(self.__temp)
+
+    @QtCore.pyqtSlot()
+    def updateIGmode(self):
+        """ Update mode of the IG controller:
+        Torr and linear
+        or
+        Pa and log
+        """
+        value = self.controlDock.IGmode.currentIndex()
+        if self.tWorker is not None:
+            self.p1Worker.setIGmode(value)
 
     def getWorker(self, ttype: ThreadType):
         if self.tWorker is None:

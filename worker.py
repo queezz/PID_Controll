@@ -39,7 +39,7 @@ class Worker(QtCore.QObject):
         super().__init__()
 
     def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication,
-                  startTime: datetime.datetime, value: int):
+                  startTime: datetime.datetime, value: int,**kws):
         self.__id = id
         self.__ttype = ttype
         self.__app = app
@@ -48,6 +48,7 @@ class Worker(QtCore.QObject):
         self.__presetTemp = value
         self.__rawData = np.zeros(shape=(STEP, 3))
         self.__calcData = np.zeros(shape=(STEP, 3))
+        self.__IGmode = kws.get('IGmode','Torr')
 
         if not TEST:
             self.pi = pigpio.pi()
@@ -66,6 +67,12 @@ class Worker(QtCore.QObject):
     def setPresetTemp(self, newTemp: int):
         self.__presetTemp = newTemp
         return
+
+    def setIGmode(self, IGmode):
+        self.__IGmode = IGmode
+        print(self.__IGmode)
+        return
+
 
     # MARK: - Methods
     @QtCore.pyqtSlot()

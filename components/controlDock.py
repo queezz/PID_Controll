@@ -1,6 +1,7 @@
 import sys
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui
+from pyqtgraph import QtCore
 from pyqtgraph.dockarea import Dock
 from customTypes import ThreadType
 from components.scaleButtons import ScaleButtons
@@ -21,9 +22,24 @@ class ControlDock(Dock):
         self.quitBtn.setFont(QtGui.QFont('serif',16))
 
         self.valueBw = QtGui.QTextBrowser()
-        self.valueBw.setMaximumHeight(110)
+        self.valueBw.setMaximumHeight(80)
         self.scaleBtn = ScaleButtons()
+        self.IGmode = QtGui.QComboBox()
+        items = ["Torr","Pa"]
+        [self.IGmode.addItem(i) for i in items]
+        self.IGmode.setFont(QtGui.QFont('serif',18))
 
+        self.IGrange = QtGui.QSpinBox()
+        self.IGrange.setMinimum(-8)
+        self.IGrange.setMaximum(-3)
+        self.IGrange.setMinimumSize(QtCore.QSize(60, 60))
+        self.IGrange.setSingleStep(1)
+        self.IGrange.setStyleSheet(
+                "QSpinBox::up-button   { width: 50px; }\n"
+                "QSpinBox::down-button { width: 50px;}\n"
+                "QSpinBox {font: 26pt;}"
+        )
+        
         self.FullNormSW = MySwitch()
         self.OnOffSW = OnOffSwitch()
         self.OnOffSW.setFont(QtGui.QFont('serif',16))
@@ -47,9 +63,11 @@ class ControlDock(Dock):
         self.widget.addWidget(self.valueBw, 1, 0,1,2)
         self.widget.addWidget(self.scaleBtn, 2, 1)
         self.widget.addWidget(self.FullNormSW,2,0)
+        self.widget.addWidget(self.IGmode,3,0)
+        self.widget.addWidget(self.IGrange,3,1)
 
         # Temperature analouge gauge
-        self.widget.addWidget(self.gaugeT,3,0)
+        self.widget.addWidget(self.gaugeT,4,0)
         
         self.verticalSpacer = QtGui.QSpacerItem(
             0, 0, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding
