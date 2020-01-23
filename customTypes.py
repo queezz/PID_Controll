@@ -1,26 +1,13 @@
 from enum import Enum
 import numpy as np
 from thermocouple import calcTemp, maskTemp
-from ionizationGauge import maskIonPres
+from ionizationGauge import maskIonPres, calcIGPres
 from pfeiffer import maskPfePres, calcPfePres
 
 threadnames = ["Plasma", "Temperature","Pressure1","Pressure2"]
 
 class ThreadType(Enum):
     PLASMA,TEMPERATURE,PRESSURE1,PRESSURE2 = threadnames 
-
-    @classmethod
-    def getEnum(cls, index: int):
-        if index == 0:
-            return cls.PLASMA
-        elif index == 1:
-            return cls.TEMPERATURE
-        elif index == 2:
-            return cls.PRESSURE1
-        elif index == 3:
-            return cls.PRESSURE2
-        else:
-            return
 
     def getGPIO(self):
         if self == self.PLASMA:
@@ -30,15 +17,17 @@ class ThreadType(Enum):
         else:
             return
 
-    def getUnit(self):
+    def getIndex(self):
         if self == self.PLASMA:
-            return "mA"
+            return 3
+        elif self == self.PRESSURE1:
+            return 1
+        elif self == self.PRESSURE2:
+            return 2
         elif self == self.TEMPERATURE:
-            return "℃"
-        elif self == self.PRESSURE1 or self == self.PRESSURE2:
-            return "Torr"
+            return 1
         else:
-            return ""
+            return 
 
     def getCalcArray(self, data: np.ndarray,**kws):
         if self == self.PLASMA:
@@ -47,7 +36,6 @@ class ThreadType(Enum):
         elif self == self.TEMPERATURE:
             return maskTemp(data)
         elif self == self.PRESSURE1:
-            m = kws.get('IGrange',1e-3)
             return maskIonPres(data,IGrange=m)
         elif self == self.PRESSURE2:
             return maskPfePres(data)
@@ -61,8 +49,9 @@ class ThreadType(Enum):
         elif self == self.TEMPERATURE:
             return calcTemp(data)
         elif self == self.PRESSURE1:
-            m = kws.get('IGrange',1e-3)
-            return data*m
+            mode = kws.get('IGmode', 0)
+            scale = kws.get('IGrange',-3)
+            return calcIGPres(data, mode, scale)
         elif self == self.PRESSURE2:
             return calcPfePres(data)
         else:

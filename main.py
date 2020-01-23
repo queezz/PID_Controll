@@ -1,4 +1,4 @@
-import sys, datetime,os
+import sys, datetime, os
 import numpy as np
 import pandas as pd
 from pyqtgraph.Qt import QtCore, QtGui
@@ -7,8 +7,16 @@ from mainView import UIWindow
 from worker import Worker
 from customTypes import ThreadType, ScaleSize
 from readsettings import make_datafolders, get_datafolderpth
+import qmsSignal
 
-""" debug """
+try:
+    from AIO import AIO_32_0RA_IRC as adc
+    import pigpio
+except:
+    print("no pigpio or AIO")
+    TEST = True
+
+# debug 
 # def trap_exc_during_debug(*args):
 #     print(args)
 
@@ -17,6 +25,7 @@ from readsettings import make_datafolders, get_datafolderpth
 # must inherit QtCore.QObject in order to use 'connect'
 class MainWidget(QtCore.QObject, UIWindow):
     DEFAULT_TEMPERATURE = 0
+
     sigAbortWorkers = QtCore.pyqtSignal()
 
     def __init__(self, app: QtGui.QApplication):
@@ -44,17 +53,15 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.valueTPlot = self.graph.tempPl.plot(pen='#5999ff')
         self.valueP1Plot = self.graph.presPl.plot(pen='#6ac600')
         self.valueP2Plot = self.graph.presPl.plot(pen='#5999ff')
-        #self.graph.presPl.setXLink(self.graph.tempPl)
         self.graph.tempPl.setXLink(self.graph.presPl)
         
         self.graph.presPl.setLogMode(y=True)
         self.graph.presPl.setYRange(-8,3,0)
         self.graph.tempPl.setYRange(0,320,0)
 
-        self.plasmaWorker = None
         self.tWorker = None
-        self.p1Worker = None
-        self.p2Worker = None
+        self.presCurWorker = None
+
         make_datafolders()
         self.datapth = get_datafolderpth()[0]
        
@@ -75,6 +82,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.controlDock.FullNormSW.clicked.connect(self.fulltonormal)
         self.controlDock.OnOffSW.clicked.connect(self.__onoff)
         self.controlDock.quitBtn.clicked.connect(self.__quit)
+        self.controlDock.qmsSigSw.clicked.connect(self.__qmsSignal)
         
     def __quit(self):
         """ terminate app """
@@ -83,7 +91,6 @@ class MainWidget(QtCore.QObject, UIWindow):
     def __onoff(self):
         """ prototype method to start and stop worker threads """
         if self.controlDock.OnOffSW.isChecked():
-            print('aha')
             self.startThreads()
             self.controlDock.quitBtn.setEnabled(False)
         else:
@@ -109,10 +116,39 @@ class MainWidget(QtCore.QObject, UIWindow):
        else:
            self.MainWindow.showNormal()
            self.controlDock.setStretch(*(10,300)) # minimize control dock width
-        
+
+    def __qmsSignal(self):
+        """ qms signal """
+        pi = pigpio.pi()
+        if self.controlDock.qmsSigSw.isChecked():
+            self.qmsSigThread = qmsSignal.QMSSignal(pi, self.__app, 1)
+            self.qmsSigThread.finished.connect(self.qmsSigThFin)
+            self.qmsSigThread.start()
+            self.presCurWorker.setQmsSignal(1)
+        else:
+            quit_msg = "Are you sure you want to stop QMS?"
+            reply = QtGui.QMessageBox.warning(
+                self.MainWindow,
+                'Message',
+                quit_msg,
+                QtGui.QMessageBox.Yes,
+                QtGui.QMessageBox.No
+            )
+            if reply == QtGui.QMessageBox.Yes:
+                self.qmsSigThread = qmsSignal.QMSSignal(pi, self.__app, 2)
+                self.qmsSigThread.finished.connect(self.qmsSigThFin)
+                self.qmsSigThread.start()
+                self.presCurWorker.setQmsSignal(0)
+            else:
+                self.controlDock.qmsSigSw.setChecked(True)
+
+    def qmsSigThFin(self):
+        self.qmsSigThread.quit()
+        self.qmsSigThread.wait()
+    
     # MARK: - Threads
     def startThreads(self):
-        self.logDock.log.append("starting {} threads".format(len(ThreadType) - 1)) # TODO: setup
+        self.logDock.log.append("starting 2 threads")
 
         self.__workers_done = 0
 
@@ -121,31 +157,31 @@ class MainWidget(QtCore.QObject, UIWindow):
             thread.wait()
 
         self.__threads = []
-        # self.plasmaWorker = Worker()
         self.tWorker = Worker()
-        self.p1Worker = Worker()
-        self.p2Worker = Worker()
+        self.presCurWorker = Worker()
 
         now = datetime.datetime.now()
 
         print("start threads: {}".format(now))
         self.logDock.progress.append("start threads: {}".format(now))
 
-        for index, worker in enumerate([self.plasmaWorker, self.tWorker, self.p1Worker, self.p2Worker]):
+        for index, worker in enumerate([self.tWorker, self.presCurWorker]):
             thread = QtCore.QThread()
             thread.setObjectName("thread_{}".format(index))
-            
-            # Plasma current not implemented, quit thread
+
             if index == 0:
-                thread.quit()
-                continue
+                worker.setWorker(index, self.__app, ThreadType.TEMPERATURE, now)
+                worker.setTempWorker(self.__temp)
+            elif index == 1:
+                worker.setWorker(index, self.__app, ThreadType.PRESSURE1, now)
 
-            ttype = ThreadType.getEnum(index)
+                mode = self.controlDock.IGmode.currentIndex()
+                scale = self.controlDock.IGrange.value()
+                worker.setPresWorker(mode, scale)
 
-            worker.setWorker(index, ttype, self.__app, now, self.__temp)
-            self.setThread(worker, thread)
+            self.setThread(worker, thread, index)
 
-    def setThread(self, worker: Worker, thread: QtCore.QThread):
+    def setThread(self, worker: Worker, thread: QtCore.QThread, index: int):
         self.__threads.append((thread, worker))
         worker.moveToThread(thread)
 
@@ -153,34 +189,46 @@ class MainWidget(QtCore.QObject, UIWindow):
         worker.sigDone.connect(self.onWorkerDone)
         worker.sigMsg.connect(self.logDock.log.append)
         self.sigAbortWorkers.connect(worker.abort)
-        ttype = worker.getThreadType()
 
-        df = pd.DataFrame(dtype=float, columns=["Time", "{}".format(ttype.value), "PresetTemperature"])
+        # temperature
+        if index == 0:
+            df = pd.DataFrame(dtype=float, columns=["time", "T", "PresetT"])
+            df.to_csv(
+                os.path.join(
+                    self.datapth,
+                    f"out_{worker.getStartTime():%Y%m%d_%H%M%S}_temp.csv"
+                ),
+                index=False,
+            )
+        # pressures and current
+        elif index == 1:
+            df = pd.DataFrame(dtype=object, columns=["time", "P1", 'P2', 'Ip', 'IGmode', 'IGscale', 'QMS_signal'])
+            df.to_csv(
+                os.path.join(
+                    self.datapth,
+                    f"out_{worker.getStartTime():%Y%m%d_%H%M%S}.csv"
+                ),
+                index=False
+            )
+        else:
+            return
 
         # creates file at the start, next data
         # in the loop is placed in another file
         # why not to save filename here, and reuse it later?
 
-        df.to_csv(
-            os.path.join(
-                self.datapth,
-                f"{ttype.value}",
-                f"out_{worker.getStartTime():%Y%m%d_%H%M%S}.csv"
-            ),
-            index=False
-        )
-
         thread.started.connect(worker.work)
         thread.start()
 
     currentvals = {ThreadType.PLASMA:0,ThreadType.TEMPERATURE:0,ThreadType.PRESSURE1:0,ThreadType.PRESSURE2:0}
-    @QtCore.pyqtSlot(np.ndarray, np.ndarray, float, ThreadType, datetime.datetime)
+    @QtCore.pyqtSlot(np.ndarray, np.ndarray, np.ndarray, ThreadType, datetime.datetime)
     def onWorkerStep(self, rawResult: np.ndarray, calcResult: np.ndarray,
-                    ave: float, ttype: ThreadType, startTime: datetime.datetime):
+                    ave: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
         """ collect data on worker step """
-        
-        self.currentvals[ttype] = ave
-        # "T =  {self.currentvals[ThreadType.TEMPERATURE]:.0f}<br>"
+        # MEMO: ave [[theadtype, average], [], []]
+        for l in ave:
+            self.currentvals[l[0]] = l[1]
+        """ set Bw text """
         temp_now = f"{self.currentvals[ThreadType.TEMPERATURE]:.0f}"
         self.registerDock.setTempText(self.__temp,temp_now)
         txt = f"""<font size=5 color="#d1451b">
@@ -198,32 +246,34 @@ class MainWidget(QtCore.QObject, UIWindow):
                 </table>
         </font>"""
         self.controlDock.valueBw.setText(txt) 
-        self.controlDock.valueBw.setCurrentFont(QtGui.QFont("Courier New")) 
         self.controlDock.gaugeT.update_value(
             self.currentvals[ThreadType.TEMPERATURE]
         )
-        
-        worker = self.getWorker(ttype)
-        data = self.getData(ttype)
-        data = self.__setStepData(data, rawResult, calcResult, ttype, startTime)
-        self.setData(ttype, data)
-        
-        scale = self.__scale.value
 
-        if ttype == ThreadType.PLASMA:
-            self.valuePlaPlot.setData(data[scale:, 0], data[scale:, 1])
-        elif ttype == ThreadType.TEMPERATURE:
-            self.valueTPlot.setData(data[scale:, 0], data[scale:, 1])
-            #print('T',scale,data.shape[0])
-        elif ttype == ThreadType.PRESSURE1:
-            self.valueP1Plot.setData(data[scale:, 0], data[scale:, 1])
-            #print('p1',scale,data.shape[0])
-        elif ttype == ThreadType.PRESSURE2:
-            self.valueP2Plot.setData(data[scale:, 0], data[scale:, 1])
-            #print('p2',scale,data.shape[0])
+        scale = self.__scale.value
+        if ttype == ThreadType.TEMPERATURE:
+            # get data
+            t_data = self.tData
+            # set and save data
+            self.tData = self.__setStepData(t_data, rawResult, calcResult, ttype, startTime)
+            # plot data
+            self.valueTPlot.setData(self.tData[scale:, 0], self.tData[scale:, 1])
+        elif ttype == ThreadType.PLASMA or ttype==ThreadType.PRESSURE1 or ttype==ThreadType.PRESSURE2:
+            # get data
+            pl_data = self.plaData
+            p1_data = self.p1Data
+            p2_data = self.p2Data
+            # set and save data
+            self.plaData = self.__setStepData(pl_data, rawResult, calcResult, ThreadType.PLASMA, startTime)
+            self.p1Data = self.__setStepData(p1_data, rawResult, calcResult, ThreadType.PRESSURE1, startTime)
+            self.p2Data = self.__setStepData(p2_data, rawResult, calcResult, ThreadType.PRESSURE2, startTime)
+            # plot data
+            self.valuePlaPlot.setData(self.plaData[scale:, 0], self.plaData[scale:, 1])
+            self.valueP1Plot.setData(self.p1Data[scale:, 0], self.p1Data[scale:, 1])
+            self.valueP2Plot.setData(self.p2Data[scale:, 0], self.p2Data[scale:, 1])
         else:
             return
-            
+
     def __setStepData(self, data: np.ndarray, rawResult: np.ndarray,
                       calcResult: np.ndarray, ttype: ThreadType,
                       startTime: datetime.datetime):
@@ -232,34 +282,52 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__save(rawResult, ttype, startTime)
         if data is None:
             data = calcResult
+            data[:, 1] = data[:, ttype.getIndex()]
         else:
+            calcData = calcResult
+            calcData[:, 1] = calcData[:, ttype.getIndex()]
             data = np.concatenate((data, np.array(calcResult)))
         return data
 
     """ write csv """
     def __save(self, data: np.ndarray, ttype: ThreadType, startTime: datetime.datetime):
-        df = pd.DataFrame(data)
-        df.to_csv(
-            os.path.join(
-                self.datapth,
-                f"{ttype.value}",
-                f"out_{startTime:%Y%m%d_%H%M%S}.csv"
-            ),
-            mode="a",
-            header=False,
-            index=False
-        )
+        if ttype == ThreadType.TEMPERATURE:
+            df = pd.DataFrame(data)
+            df.to_csv(
+                os.path.join(
+                    self.datapth,
+                    f"out_{startTime:%Y%m%d_%H%M%S}_temp.csv"
+                ),
+                mode="a",
+                header=False,
+                index=False
+            )
+        elif ttype==ThreadType.PLASMA or ttype==ThreadType.PRESSURE1 or ttype==ThreadType.PRESSURE2:
+            df = pd.DataFrame(data)
+            df.to_csv(
+                os.path.join(
+                    self.datapth,
+                    f"out_{startTime:%Y%m%d_%H%M%S}.csv"
+                ),
+                mode="a",
+                header=False,
+                index=False
+            )
 
     @QtCore.pyqtSlot(int, ThreadType)
     def onWorkerDone(self, workerId: int, ttype: ThreadType):
         self.logDock.log.append("Worker #{} done".format(workerId))
         self.logDock.progress.append("-- Signal {} STOPPED".format(workerId))
         self.__workers_done += 1
-        worker = self.getWorker(ttype)
+        # reset Data
+        if ttype == ThreadType.TEMPERATURE:
+            self.tData = None
+        elif ttype==ThreadType.PLASMA or ttype==ThreadType.PRESSURE1 or ttype==ThreadType.PRESSURE2:
+            self.plaData = None
+            self.p1Data = None
+            self.p2Data = None
 
-        self.setData(ttype)
-
-        if self.__workers_done == len(ThreadType) - 1: # TODO: setup
+        if self.__workers_done == 2:
             # self.abortThreads()   # not necessary
             self.logDock.log.append("No more plot workers active")
 
@@ -280,10 +348,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         temp_now = self.currentvals[ThreadType.TEMPERATURE]
         self.registerDock.setTemp(self.__temp,f'{temp_now:.0f}')
         if self.tWorker is not None:
-            # self.plasmaWorker.setPresetTemp(self.__temp) # TODO: setup
             self.tWorker.setPresetTemp(self.__temp)
-            self.p1Worker.setPresetTemp(self.__temp)
-            self.p2Worker.setPresetTemp(self.__temp)
 
     @QtCore.pyqtSlot()
     def updateIGmode(self):
@@ -294,7 +359,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         """
         value = self.controlDock.IGmode.currentIndex()
         if self.tWorker is not None:
-            self.p1Worker.setIGmode(value)
+            self.presCurWorker.setIGmode(value)
 
     @QtCore.pyqtSlot()
     def updateIGrange(self):
@@ -303,47 +368,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         """
         value = self.controlDock.IGrange.value()
         if self.tWorker is not None:
-            self.p1Worker.setIGrange(value)
-
-    def getWorker(self, ttype: ThreadType):
-        if self.tWorker is None:
-            return
-        elif ttype == ThreadType.PLASMA:
-            return self.plasmaWorker
-        elif ttype == ThreadType.TEMPERATURE:
-            return self.tWorker
-        elif ttype == ThreadType.PRESSURE1:
-            return self.p1Worker
-        elif ttype == ThreadType.PRESSURE2:
-            return self.p2Worker
-        else:
-            return
-
-    def getData(self, ttype: ThreadType):
-        """ Get data from worker
-        """
-        if ttype == ThreadType.PLASMA:
-            return self.praData
-        elif ttype == ThreadType.TEMPERATURE:
-            return self.tData
-        elif ttype == ThreadType.PRESSURE1:
-            return self.p1Data
-        elif ttype == ThreadType.PRESSURE2:
-            return self.p2Data
-        else:
-            return
-
-    def setData(self, ttype: ThreadType, data: np.ndarray = None):
-        if ttype == ThreadType.PLASMA:
-            self.praData = data
-        elif ttype == ThreadType.TEMPERATURE:
-            self.tData = data
-        elif ttype == ThreadType.PRESSURE1:
-            self.p1Data = data
-        elif ttype == ThreadType.PRESSURE2:
-            self.p2Data = data
-        else:
-            return
+            self.presCurWorker.setIGrange(value)
 
 if __name__ == "__main__":
     app = QtGui.QApplication([])
