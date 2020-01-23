@@ -19,7 +19,7 @@ class QMSSignal(QtCore.QThread):
     def run(self):
         pinNum = 11 # TODO: set pinnum
         self.pi.set_mode(pinNum, pigpio.OUTPUT)
-        for _ in range(self.count)
+        for _ in range(self.count):
             self.pi.write(pinNum, 1)
             time.sleep(self.count)
             self.pi.write(pinNum, 0)

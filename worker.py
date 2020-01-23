@@ -245,9 +245,9 @@ class Worker(QtCore.QObject):
 
                 # CONTROL
                 if TT:
-                    self.__controlTemp(aveValue, eCurrent)
+                    self.__controlTemp(average, eCurrent)
                 else:
-                    controlStep = self.__controlTemp1(aveValue, controlStep)
+                    controlStep = self.__controlTemp1(average, controlStep)
                 
                 self.sigStep.emit(self.__rawData, self.__rawData, average, self.__ttype, self.__startTime)
                 self.__rawData = np.zeros(shape=(STEP, 3))
@@ -283,8 +283,8 @@ class Worker(QtCore.QObject):
         self.sigDone.emit(self.__id, self.__ttype)
 
     # MARK: - Control
-    def __controlTemp(self, aveTemp: float, eCurrent: ElectricCurrent):
-        e = self.__presetTemp - aveTemp
+    def __controlTemp(self, aveTemp: np.ndarray, eCurrent: ElectricCurrent):
+        e = self.__presetTemp - aveTemp[0][ThreadType.TEMPERATURE]
         integral = self.__sumE + e * TIMESLEEP
         derivative = (e - self.__exE) / TIMESLEEP
 
