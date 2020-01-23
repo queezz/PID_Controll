@@ -21,9 +21,9 @@ class QMSSignal(QtCore.QThread):
         self.pi.set_mode(pinNum, pigpio.OUTPUT)
         for _ in range(self.count):
             self.pi.write(pinNum, 1)
-            time.sleep(self.count)
+            time.sleep(6)
             self.pi.write(pinNum, 0)
-            time.sleep(1)
+            time.sleep(3)
             self.app.processEvents()
         self.finished.emit()
 

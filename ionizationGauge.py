@@ -8,7 +8,7 @@ def maskIonPres(voltages: np.ndarray,**kws):
     tmp = voltages[mask]
     return tmp
 
-def calcIGPres(voltage, mode: str, scale: float):
+def calcIGPres(voltage, mode: int, scale: float):
     """ convert 0-10 V output into Torr """
     if mode == 0:
         return voltage * (10**scale)
