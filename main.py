@@ -44,6 +44,8 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.valueTPlot = self.graph.tempPl.plot(pen='#5999ff')
         self.valueP1Plot = self.graph.presPl.plot(pen='#6ac600')
         self.valueP2Plot = self.graph.presPl.plot(pen='#5999ff')
+        #self.graph.presPl.setXLink(self.graph.tempPl)
+        self.graph.tempPl.setXLink(self.graph.presPl)
         
         self.graph.presPl.setLogMode(y=True)
         self.graph.presPl.setYRange(-8,3,0)
@@ -64,10 +66,11 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.__scale = ScaleSize.getEnum(index)
 
     def __setConnects(self):
-        self.controlDock.scaleBtn.selectBtn.activated.connect(self.__changeScale)
+        self.controlDock.scaleBtn.selectBtn.currentIndexChanged.connect(self.__changeScale)
         
         self.registerDock.registerBtn.clicked.connect(self.registerTemp)
         self.controlDock.IGmode.currentIndexChanged.connect(self.updateIGmode)
+        self.controlDock.IGrange.valueChanged.connect(self.updateIGrange)
         
         self.controlDock.FullNormSW.clicked.connect(self.fulltonormal)
         self.controlDock.OnOffSW.clicked.connect(self.__onoff)
@@ -181,10 +184,21 @@ class MainWidget(QtCore.QObject, UIWindow):
         temp_now = f"{self.currentvals[ThreadType.TEMPERATURE]:.0f}"
         self.registerDock.setTempText(self.__temp,temp_now)
         txt = f"""<font size=5 color="#d1451b">
-                P1 = {self.currentvals[ThreadType.PRESSURE1]:.2f}<br>
-                P2 = {self.currentvals[ThreadType.PRESSURE2]:.2f}
+              <table>
+                 <tr>
+                  <td>
+                    P1 = {self.currentvals[ThreadType.PRESSURE1]:.1e}
+                  </td>
+                 </tr>
+                 <tr>
+                  <td>
+                    P2 = {self.currentvals[ThreadType.PRESSURE2]:.1e}
+                  </td>
+                 </tr>
+                </table>
         </font>"""
         self.controlDock.valueBw.setText(txt) 
+        self.controlDock.valueBw.setCurrentFont(QtGui.QFont("Courier New")) 
         self.controlDock.gaugeT.update_value(
             self.currentvals[ThreadType.TEMPERATURE]
         )
@@ -200,10 +214,13 @@ class MainWidget(QtCore.QObject, UIWindow):
             self.valuePlaPlot.setData(data[scale:, 0], data[scale:, 1])
         elif ttype == ThreadType.TEMPERATURE:
             self.valueTPlot.setData(data[scale:, 0], data[scale:, 1])
+            #print('T',scale,data.shape[0])
         elif ttype == ThreadType.PRESSURE1:
             self.valueP1Plot.setData(data[scale:, 0], data[scale:, 1])
+            #print('p1',scale,data.shape[0])
         elif ttype == ThreadType.PRESSURE2:
             self.valueP2Plot.setData(data[scale:, 0], data[scale:, 1])
+            #print('p2',scale,data.shape[0])
         else:
             return
             
@@ -278,6 +295,15 @@ class MainWidget(QtCore.QObject, UIWindow):
         value = self.controlDock.IGmode.currentIndex()
         if self.tWorker is not None:
             self.p1Worker.setIGmode(value)
+
+    @QtCore.pyqtSlot()
+    def updateIGrange(self):
+        """ Update range of the IG controller:
+        10^{-3} - 10^{-8} multiplier when in linear mode (Torr)
+        """
+        value = self.controlDock.IGrange.value()
+        if self.tWorker is not None:
+            self.p1Worker.setIGrange(value)
 
     def getWorker(self, ttype: ThreadType):
         if self.tWorker is None:

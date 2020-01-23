@@ -49,6 +49,7 @@ class Worker(QtCore.QObject):
         self.__rawData = np.zeros(shape=(STEP, 3))
         self.__calcData = np.zeros(shape=(STEP, 3))
         self.__IGmode = kws.get('IGmode','Torr')
+        self.__IGrange= kws.get('IGrange',-3)
 
         if not TEST:
             self.pi = pigpio.pi()
@@ -73,6 +74,10 @@ class Worker(QtCore.QObject):
         print(self.__IGmode)
         return
 
+    def setIGrange(self, IGrange):
+        self.__IGrange= IGrange
+        print(10**self.__IGrange)
+        return
 
     # MARK: - Methods
     @QtCore.pyqtSlot()
@@ -137,7 +142,12 @@ class Worker(QtCore.QObject):
             voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            value = self.__ttype.getCalcValue(voltage)
+            if self.__ttype == ThreadType.PRESSURE1:
+                m = 10**self.__IGrange
+                print(m)
+            else:
+                m = 1
+            value = self.__ttype.getCalcValue(voltage,IGrange=m)
 
             # READ DATA
             #  I do not know why this is needed
@@ -272,17 +282,39 @@ class Worker(QtCore.QObject):
         totalStep = 0
         step = 0
         while not (self.__abort):
-            time.sleep(TIMESLEEP)
+            #print(self.__ttype)
+            if self.__ttype == ThreadType.PLASMA:
+                val = (np.random.normal()+2.5)
+                time.sleep(TIMESLEEP)
+                STEPtest = STEP
+            elif self.__ttype == ThreadType.TEMPERATURE:
+                val = (np.random.normal()+1)/10000
+                time.sleep(0.25)
+                STEPtest = 2 
+            elif self.__ttype == ThreadType.PRESSURE1:
+                val = (np.random.normal()+1)*5
+                time.sleep(TIMESLEEP)
+                STEPtest = STEP
+            elif self.__ttype == ThreadType.PRESSURE2:
+                val = (np.random.normal()+1)*5
+                time.sleep(TIMESLEEP)
+                STEPtest = STEP
+            else:
+                return
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            self.__rawData[step] = [deltaSeconds, np.random.normal()/10000, self.__presetTemp]
+            self.__rawData[step] = [deltaSeconds, val, self.__presetTemp]
+            if self.__ttype == ThreadType.PRESSURE1:
+                m = 10**self.__IGrange
+            else:
+                m = 1
 
-            if step%(STEP-1) == 0 and step != 0:
+            if step%(STEPtest-1) == 0 and step != 0:
                 average = np.mean(self.__rawData[:, 1], dtype=float)
-                average = self.__ttype.getCalcValue(average)
-                self.__calcData = self.__ttype.getCalcArray(self.__rawData)
+                average = self.__ttype.getCalcValue(average,IGrange=m)
+                self.__calcData = self.__ttype.getCalcArray(self.__rawData,IGrange=m)
                 self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype, self.__startTime)
-                self.__rawData = np.zeros(shape=(STEP, 3))
-                self.__calcData = np.zeros(shape=(STEP, 3))
+                self.__rawData = np.zeros(shape=(STEPtest, 3))
+                self.__calcData = np.zeros(shape=(STEPtest, 3))
                 step = 0
             else:
                 step += 1
@@ -295,8 +327,8 @@ class Worker(QtCore.QObject):
                 step -= 1
             if step > -1:
                 aveValue = np.mean(self.__rawData[:step+1][1], dtype=float)
-                aveValue = self.__ttype.getCalcValue(aveValue)
-                self.__calcData = self.__ttype.getCalcArray(self.__rawData)
+                aveValue = self.__ttype.getCalcValue(aveValue,IGrange=m)
+                self.__calcData = self.__ttype.getCalcArray(self.__rawData,IGrange=m)
                 self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], aveValue, self.__ttype, self.__startTime)
 
             self.sigMsg.emit(

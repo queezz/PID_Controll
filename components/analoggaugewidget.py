@@ -203,8 +203,6 @@ class AnalogGaugeWidget(QWidget):
         # self.resize(300 , 300)
         self.rescale_method()
 
-
-
     def rescale_method(self):
         # print("slotMethod")
         ysize = 1.7*self.height()
