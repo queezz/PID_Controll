@@ -8,6 +8,9 @@ def maskPfePres(voltages: np.ndarray):
     return tmp
 
 def calcPfePres(voltage: float):
+    """ update to accept numpy.ndarray
+    in that case operatio would be much faster
+    """
     # V → Torr
     exponent = 1.667 * voltage - 11.46
     pres = 10**exponent

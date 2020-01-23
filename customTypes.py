@@ -40,27 +40,29 @@ class ThreadType(Enum):
         else:
             return ""
 
-    def getCalcArray(self, data: np.ndarray):
+    def getCalcArray(self, data: np.ndarray,**kws):
         if self == self.PLASMA:
             # TODO: calc
             return data
         elif self == self.TEMPERATURE:
             return maskTemp(data)
         elif self == self.PRESSURE1:
-            return maskIonPres(data)
+            m = kws.get('IGrange',1e-3)
+            return maskIonPres(data,IGrange=m)
         elif self == self.PRESSURE2:
             return maskPfePres(data)
         else:
             return data
 
-    def getCalcValue(self, data: float):
+    def getCalcValue(self, data: float,**kws):
         if self == self.PLASMA:
             # TODO: calc
             return data
         elif self == self.TEMPERATURE:
             return calcTemp(data)
         elif self == self.PRESSURE1:
-            return data
+            m = kws.get('IGrange',1e-3)
+            return data*m
         elif self == self.PRESSURE2:
             return calcPfePres(data)
         else:
