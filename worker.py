@@ -26,7 +26,7 @@ try:
 except:
     print("no pigpio or AIO")
     TEST = True
-
+TT = True
 # must inherit QtCore.QObject in order to use 'connect'
 class Worker(QtCore.QObject):
 
@@ -146,41 +146,48 @@ class Worker(QtCore.QObject):
             ip_v = aio.analog_read_volt(CHIP, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-
-            # if self.__ttype == ThreadType.PRESSURE1:
-            m = 10**self.__IGrange
-            # else:
-                # m = 1
-            value = self.__ttype.getCalcValue(voltage,IGrange=m, IGmod="Torr")
+            self.__rawData[step] = [deltaSeconds, p1_v, p2_v, ip_v, self.__IGmode, self.__IGrange, self.__qmsSignal]
 
             # calcurate DATA
+            p1_d = ThreadType.getCalcValue(ThreadType.PRESSURE1, p1_v, IGmode=self.__IGmode, IGrange=self.__IGrange)
+            p2_d = ThreadType.getCalcValue(ThreadType.PRESSURE2, p2_v)
+            ip_d = ip_v # TODO: calc
 
-
-            self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
+            self.__calcData[step] = [deltaSeconds, p1_d, p2_d, ip_d]
 
             if step%(STEP-1) == 0 and step != 0:
-                # average 10 points of data
-                aveValue = np.mean(self.__rawData[:, 1], dtype=float)
-                # convert vlots to actual value
-                aveValue = self.__ttype.getCalcValue(aveValue)
-                    
-                self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                self.sigStep.emit(self.__rawData, self.__calcData, aveValue, self.__ttype, self.__startTime)
-                self.__rawData = np.zeros(shape=(STEP, 3))
-                self.__calcData = np.zeros(shape=(STEP, 3))
+                # get average
+                ave_p1 = np.mean(self.__calcData[:, 1], dtype=float)
+                ave_p2 = np.mean(self.__calcData[:, 2], dtype=float)
+                ave_ip = np.mean(self.__calcData[:, 3], dtype=float)
+                average = np.array([
+                    [ThreadType.PLASMA, ave_ip],
+                    [ThreadType.PRESSURE1, ave_p1],
+                    [ThreadType.PRESSURE2, ave_p2]
+                ])
+
+                self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype, self.__startTime)
+                self.__rawData = np.zeros(shape=(STEP, 7))
+                self.__calcData = np.zeros(shape=(STEP, 4))
                 step = 0
             else:
                 step += 1
             totalStep += 1                
             self.__app.processEvents()
         else:
-            if self.__rawData[step][0] == 0.0:
+            if self.__calcData[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                self.__calcData = self.__ttype.getCalcArray(self.__rawData)
-                aveValue = np.mean(self.__rawData[:step+1][1], dtype=float)
-                aveValue = self.__ttype.getCalcValue(aveValue)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, aveValue, self.__ttype, self.__startTime)
+                # get average
+                ave_p1 = np.mean(self.__calcData[:, 1], dtype=float)
+                ave_p2 = np.mean(self.__calcData[:, 2], dtype=float)
+                ave_ip = np.mean(self.__calcData[:, 3], dtype=float)
+                average = np.array([
+                    [ThreadType.PLASMA, ave_ip],
+                    [ThreadType.PRESSURE1, ave_p1],
+                    [ThreadType.PRESSURE2, ave_p2]
+                ])
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData, average, self.__ttype, self.__startTime)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
@@ -188,7 +195,6 @@ class Worker(QtCore.QObject):
         self.sigDone.emit(self.__id, self.__ttype)
         return
 
-    TT = True
     # temperature plot
     @QtCore.pyqtSlot()
     def __plotT(self):
@@ -227,7 +233,10 @@ class Worker(QtCore.QObject):
 
             if step%(STEP-1) == 0 and step != 0:
                 # average 10 points of data
-                aveValue = np.mean(self.__rawData[:, 1], dtype=float)
+                ave = np.mean(self.__rawData[:, 1], dtype=float)
+                average = np.array([
+                    [ThreadType.TEMPERATURE, ave],
+                ])
 
                 # CONTROL
                 if TT:
@@ -235,7 +244,7 @@ class Worker(QtCore.QObject):
                 else:
                     controlStep = self.__controlTemp1(aveValue, controlStep)
                 
-                self.sigStep.emit(self.__rawData, self.__rawData, aveValue, self.__ttype, self.__startTime)
+                self.sigStep.emit(self.__rawData, self.__rawData, average, self.__ttype, self.__startTime)
                 self.__rawData = np.zeros(shape=(STEP, 3))
                 step = 0
             else:
@@ -250,8 +259,11 @@ class Worker(QtCore.QObject):
             if self.__rawData[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                aveValue = np.mean(self.__rawData[:step+1][1], dtype=float)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__rawData[:step+1, :], aveValue, self.__ttype, self.__startTime)
+                ave = np.mean(self.__rawData[:, 1], dtype=float)
+                average = np.array([
+                    [ThreadType.TEMPERATURE, ave]
+                ])
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__rawData[:step+1, :], average, self.__ttype, self.__startTime)
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)
             )
@@ -276,13 +288,9 @@ class Worker(QtCore.QObject):
         Ki = 0.06
         Kd = 0
 
-        # TODO: self._onLight を変更する
         if e >= 0:
             output = Kp * e + Ki * integral + Kd * derivative
             output = output * 0.0002 
-
-
-            print(output)
             eCurrent.setOnLight(max(output, 0))
         else:
             eCurrent.setOnLight(0)
@@ -290,7 +298,6 @@ class Worker(QtCore.QObject):
         self.__sumE = integral
 
     def __controlTemp1(self, aveTemp: float, steps: int):
-        # TODO: 調整
         if steps <= 0:
             d = self.__presetTemp - aveTemp
             if d <= 1.5:
@@ -325,7 +332,6 @@ class Worker(QtCore.QObject):
             p1_v = (np.random.normal()+1)*5
             p2_v = (np.random.normal()+1)*5
             ip_v = np.random.normal()+2.5
-            # temperature = (np.random.normal()+1)/10000
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             self.__rawData[step] = [deltaSeconds, p1_v, p2_v, ip_v, self.__IGmode, self.__IGrange, self.__qmsSignal]

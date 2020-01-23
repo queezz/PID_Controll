@@ -49,8 +49,8 @@ class ThreadType(Enum):
         elif self == self.TEMPERATURE:
             return calcTemp(data)
         elif self == self.PRESSURE1:
-            mode = kws.get('IGmode', 'Torr')
-            scale = kws.get('IGrange',1e-3)
+            mode = kws.get('IGmode', 0)
+            scale = kws.get('IGrange',-3)
             return calcIGPres(data, mode, scale)
         elif self == self.PRESSURE2:
             return calcPfePres(data)
