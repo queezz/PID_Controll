@@ -68,9 +68,6 @@ class Worker(QtCore.QObject):
         self.__qmsSignal = 0
 
     # MARK: - Getters
-    def getThreadType(self):
-        return self.__ttype
-
     def getStartTime(self):
         return self.__startTime
 
@@ -79,7 +76,7 @@ class Worker(QtCore.QObject):
         self.__presetTemp = newTemp
         return
 
-    def setIGmode(self, IGmode):
+    def setIGmode(self, IGmode: int):
         """
             0: Torr
             1: Pa
@@ -87,11 +84,19 @@ class Worker(QtCore.QObject):
         self.__IGmode = IGmode
         return
 
-    def setIGrange(self, IGrange):
+    def setIGrange(self, IGrange: int):
         """
             range: -8 ~ -3
         """
         self.__IGrange = IGrange
+        return
+
+    def setQmsSignal(self, signal: int):
+        """
+            waiting: 0
+            running: 1
+        """
+        self.__qmsSignal = signal
         return
 
     # MARK: - Methods

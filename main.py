@@ -1,4 +1,4 @@
-import sys, datetime,os
+import sys, datetime, os
 import numpy as np
 import pandas as pd
 from pyqtgraph.Qt import QtCore, QtGui
@@ -7,9 +7,16 @@ from mainView import UIWindow
 from worker import Worker
 from customTypes import ThreadType, ScaleSize
 from readsettings import make_datafolders, get_datafolderpth
-import ionizationGauge
+import qmsSignal
 
-""" debug """
+try:
+    from AIO import AIO_32_0RA_IRC as adc
+    import pigpio
+except:
+    print("no pigpio or AIO")
+    TEST = True
+
+# debug 
 # def trap_exc_during_debug(*args):
 #     print(args)
 
@@ -75,6 +82,7 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.controlDock.FullNormSW.clicked.connect(self.fulltonormal)
         self.controlDock.OnOffSW.clicked.connect(self.__onoff)
         self.controlDock.quitBtn.clicked.connect(self.__quit)
+        self.controlDock.qmsSigSw.clicked.connect(self.__qmsSignal)
         
     def __quit(self):
         """ terminate app """
@@ -108,7 +116,36 @@ class MainWidget(QtCore.QObject, UIWindow):
        else:
            self.MainWindow.showNormal()
            self.controlDock.setStretch(*(10,300)) # minimize control dock width
-        
+
+    def __qmsSignal(self):
+        """ qms signal """
+        pi = pigpio.pi()
+        if self.controlDock.qmsSigSw.isChecked():
+            self.qmsSigThread = qmsSignal.QMSSignal(pi, self.__app, 1)
+            self.qmsSigThread.finished.connect(self.qmsSigThFin)
+            self.qmsSigThread.start()
+            self.presCurWorker.setQmsSignal(1)
+        else:
+            quit_msg = "Are you sure you want to stop QMS?"
+            reply = QtGui.QMessageBox.warning(
+                self.MainWindow,
+                'Message',
+                quit_msg,
+                QtGui.QMessageBox.Yes,
+                QtGui.QMessageBox.No
+            )
+            if reply == QtGui.QMessageBox.Yes:
+                self.qmsSigThread = qmsSignal.QMSSignal(pi, self.__app, 2)
+                self.qmsSigThread.finished.connect(self.qmsSigThFin)
+                self.qmsSigThread.start()
+                self.presCurWorker.setQmsSignal(0)
+            else:
+                self.controlDock.qmsSigSw.setChecked(True)
+
+    def qmsSigThFin(self):
+        self.qmsSigThread.quit()
+        self.qmsSigThread.wait()
+    
     # MARK: - Threads
     def startThreads(self):
         self.logDock.log.append("starting 2 threads")

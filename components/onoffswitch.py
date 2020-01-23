@@ -51,5 +51,12 @@ class OnOffSwitch(MySwitch):
     labels = ['ON','OFF']
     colors = [QtGui.QColor('#8df01d'), QtGui.QColor('#b89c76')]
 
+class QmsSwitch(MySwitch):
+    radius = 14
+    width = 40
+
+    labels = ['qRun', 'qStop']
+    colors = [QtGui.QColor('#33CCFF'), QtGui.QColor('#b89c76')]
+
 if __name__ == "__main__":
     pass

@@ -5,7 +5,7 @@ from pyqtgraph import QtCore
 from pyqtgraph.dockarea import Dock
 from customTypes import ThreadType
 from components.scaleButtons import ScaleButtons
-from components.onoffswitch import MySwitch, OnOffSwitch
+from components.onoffswitch import MySwitch, OnOffSwitch, QmsSwitch
 from components.analoggaugewidget import AnalogGaugeWidget
 
 class ControlDock(Dock):
@@ -41,7 +41,8 @@ class ControlDock(Dock):
                 "QSpinBox::down-button { width: 50px;}\n"
                 "QSpinBox {font: 26pt;}"
         )
-        
+
+        self.qmsSigSw = QmsSwitch()
         self.FullNormSW = MySwitch()
         self.OnOffSW = OnOffSwitch()
         self.OnOffSW.setFont(QtGui.QFont('serif',16))
@@ -65,11 +66,13 @@ class ControlDock(Dock):
         self.widget.addWidget(self.valueBw, 1, 0,1,2)
         self.widget.addWidget(self.scaleBtn, 2, 1)
         self.widget.addWidget(self.FullNormSW,2,0)
-        self.widget.addWidget(self.IGmode,3,0)
-        self.widget.addWidget(self.IGrange,3,1)
+        self.widget.addWidget(self.IGmode,3, 0)
+        self.widget.addWidget(self.IGrange,3, 1)
 
         # Temperature analouge gauge
-        self.widget.addWidget(self.gaugeT,4,0)
+        self.widget.addWidget(self.gaugeT, 5, 0, 10, 1)
+
+        self.widget.addWidget(self.qmsSigSw, 10, 1, 1, 1)
         
         self.verticalSpacer = QtGui.QSpacerItem(
             0, 0, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding
