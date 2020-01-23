@@ -16,7 +16,7 @@ class RegisterDock(Dock):
         self.temperatureSB = QtGui.QSpinBox()
         self.temperatureSB.setMinimum(0)
         self.temperatureSB.setMaximum(600)
-        self.temperatureSB.setSuffix(f'{DEGREE_SMB}')
+        self.temperatureSB.setSuffix(f'{DEGREE_SMB} C')
         self.temperatureSB.setMinimumSize(QtCore.QSize(180, 80))
         self.temperatureSB.setSingleStep(10)
         self.temperatureSB.setStyleSheet(

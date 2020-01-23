@@ -10,6 +10,7 @@ TEST = False
 # Specify cable connections to ADC
 CHP1 = 15
 CHP2 = 16
+CHIP = 5
 CHT  = 1
 
 # Raspi outputs
@@ -29,7 +30,7 @@ except:
 # must inherit QtCore.QObject in order to use 'connect'
 class Worker(QtCore.QObject):
 
-    sigStep = QtCore.pyqtSignal(np.ndarray, np.ndarray, float, ThreadType, datetime.datetime)
+    sigStep = QtCore.pyqtSignal(np.ndarray, np.ndarray, np.ndarray, ThreadType, datetime.datetime)
     sigDone = QtCore.pyqtSignal(int, ThreadType)
     sigMsg = QtCore.pyqtSignal(str)
 
@@ -38,24 +39,33 @@ class Worker(QtCore.QObject):
     def __init__(self):
         super().__init__()
 
-    def setWorker(self, id: int, ttype: ThreadType, app: QtGui.QApplication,
-                  startTime: datetime.datetime, value: int,**kws):
+    def setWorker(self, id: int, app: QtGui.QApplication,
+                  ttype:ThreadType, startTime: datetime.datetime):
         self.__id = id
-        self.__ttype = ttype
         self.__app = app
         self.__abort = False
         self.__startTime = startTime
-        self.__presetTemp = value
-        self.__rawData = np.zeros(shape=(STEP, 3))
-        self.__calcData = np.zeros(shape=(STEP, 3))
-        self.__IGmode = kws.get('IGmode','Torr')
-        self.__IGrange= kws.get('IGrange',-3)
+        self.__ttype = ttype
 
-        if not TEST:
-            self.pi = pigpio.pi()
-            self.__onLight= 0.1
-            self.__sumE = 0
-            self.__exE = 0
+    # set temperature worker
+    def setTempWorker(self, presetTemp: int):
+            self.__rawData = np.zeros(shape=(STEP, 3))
+            self.__presetTemp = presetTemp
+
+            # PID control
+            if not TEST:
+                self.pi = pigpio.pi()
+                self.__onLight= 0.1
+                self.__sumE = 0
+                self.__exE = 0
+
+    # set pressure worker
+    def setPresWorker(self, IGmode: int, IGrange: int):
+        self.__rawData = np.zeros(shape=(STEP, 7))
+        self.__calcData = np.zeros(shape=(STEP, 4))
+        self.__IGmode = IGmode
+        self.__IGrange = IGrange
+        self.__qmsSignal = 0
 
     # MARK: - Getters
     def getThreadType(self):
@@ -70,13 +80,18 @@ class Worker(QtCore.QObject):
         return
 
     def setIGmode(self, IGmode):
+        """
+            0: Torr
+            1: Pa
+        """
         self.__IGmode = IGmode
-        print(self.__IGmode)
         return
 
     def setIGrange(self, IGrange):
-        self.__IGrange= IGrange
-        print(10**self.__IGrange)
+        """
+            range: -8 ~ -3
+        """
+        self.__IGrange = IGrange
         return
 
     # MARK: - Methods
@@ -84,16 +99,15 @@ class Worker(QtCore.QObject):
     def work(self):
         self.__setThread()
         if TEST:
-            self.__test()
+            if self.__ttype == ThreadType.TEMPERATURE:
+                self.__testTemp()
+            else:
+                self.__testPres()
         else:
-            if self.__ttype == ThreadType.PLASMA:
-                self.__test()
-            elif self.__ttype == ThreadType.TEMPERATURE:
-                self.__plotTemp()
-            elif self.__ttype == ThreadType.PRESSURE1:
-                self.__plotPress1()
-            elif self.__ttype == ThreadType.PRESSURE2:
-                self.__plotPress2()
+            if self.__ttype == ThreadType.TEMPERATURE:
+                self.__plotT()
+            elif self.__ttype==ThreadType.PLASMA or self.__ttype==ThreadType.PRESSURE1 or self.__ttype==ThreadType.PRESSURE2:
+                self.__plotPresCur()
             else:
                 return
 
@@ -111,22 +125,10 @@ class Worker(QtCore.QObject):
         self.__abort = True
 
     # MARK: - Plot
-    def __plotPlasma(self):
-        # TODO: pinId, control
-        self.__plot(3, 4)
-
-    def __plotTemp(self):
-        self.__plotT()
-
-    def __plotPress1(self):
-        self.__plot(CHP1, adc.PGA.PGA_10_0352V)
-
-    def __plotPress2(self):
-        self.__plot(CHP2, adc.PGA.PGA_10_0352V)
-
-    def __plot(self, pId: int, fscale: int):
-        """ control - a method to control Temperature (or other)
-        control = self.__controlTemp for temperature control
+    def __plotPresCur(self):
+        """
+            plasma current will be controled but now it is not controled.
+            because of this, function name is '__plotPresCur'.
         """
         
         aio = adc(0x49, 0x3e) # instance of AIO_32_0RA_IRC from AIO.py
@@ -139,22 +141,20 @@ class Worker(QtCore.QObject):
             time.sleep(TIMESLEEP)
             
             # READ DATA
-            voltage = aio.analog_read_volt(pId, aio.DataRate.DR_860SPS, pga=fscale)
+            p1_v = aio.analog_read_volt(CHP1, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
+            p2_v = aio.analog_read_volt(CHP2, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
+            ip_v = aio.analog_read_volt(CHIP, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            if self.__ttype == ThreadType.PRESSURE1:
-                m = 10**self.__IGrange
-                print(m)
-            else:
-                m = 1
-            value = self.__ttype.getCalcValue(voltage,IGrange=m)
 
-            # READ DATA
-            #  I do not know why this is needed
-            #  What happens if these two lines are removed?
-            #  Just reading from two channels, right? Some communication problem?
-            aio.analog_read_volt(CHP1, aio.DataRate.DR_860SPS, pga=2)
-            aio.analog_read_volt(CHP2, aio.DataRate.DR_860SPS, pga=2)
+            # if self.__ttype == ThreadType.PRESSURE1:
+            m = 10**self.__IGrange
+            # else:
+                # m = 1
+            value = self.__ttype.getCalcValue(voltage,IGrange=m, IGmod="Torr")
+
+            # calcurate DATA
+
 
             self.__rawData[step] = [deltaSeconds, voltage, self.__presetTemp]
 
@@ -306,43 +306,98 @@ class Worker(QtCore.QObject):
         pass
 
     # MARK: - Test
-    def __test(self):
+    def __testPres(self):
         totalStep = 0
         step = 0
         while not (self.__abort):
             #print(self.__ttype)
             if self.__ttype == ThreadType.PLASMA:
-                val = (np.random.normal()+2.5)
-                time.sleep(TIMESLEEP)
-                STEPtest = STEP
+                pass
             elif self.__ttype == ThreadType.TEMPERATURE:
                 val = (np.random.normal()+1)/10000
                 time.sleep(0.25)
                 STEPtest = 2 
-            elif self.__ttype == ThreadType.PRESSURE1:
-                val = (np.random.normal()+1)*5
-                time.sleep(TIMESLEEP)
-                STEPtest = STEP
-            elif self.__ttype == ThreadType.PRESSURE2:
-                val = (np.random.normal()+1)*5
-                time.sleep(TIMESLEEP)
-                STEPtest = STEP
-            else:
                 return
+
+            time.sleep(TIMESLEEP)
+            STEPtest = STEP
+
+            p1_v = (np.random.normal()+1)*5
+            p2_v = (np.random.normal()+1)*5
+            ip_v = np.random.normal()+2.5
+            # temperature = (np.random.normal()+1)/10000
+
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
-            self.__rawData[step] = [deltaSeconds, val, self.__presetTemp]
-            if self.__ttype == ThreadType.PRESSURE1:
-                m = 10**self.__IGrange
-            else:
-                m = 1
+            self.__rawData[step] = [deltaSeconds, p1_v, p2_v, ip_v, self.__IGmode, self.__IGrange, self.__qmsSignal]
+
+            p1_d = ThreadType.getCalcValue(ThreadType.PRESSURE1, p1_v, IGmode=self.__IGmode, IGrange=self.__IGrange)
+            p2_d = ThreadType.getCalcValue(ThreadType.PRESSURE2, p2_v)
+            ip_d = ip_v # TODO: calc
+            self.__calcData[step] = [deltaSeconds, p1_d, p2_d, ip_d]
 
             if step%(STEPtest-1) == 0 and step != 0:
-                average = np.mean(self.__rawData[:, 1], dtype=float)
-                average = self.__ttype.getCalcValue(average,IGrange=m)
-                self.__calcData = self.__ttype.getCalcArray(self.__rawData,IGrange=m)
+                # get average
+                ave_p1 = np.mean(self.__calcData[:, 1], dtype=float)
+                ave_p2 = np.mean(self.__calcData[:, 2], dtype=float)
+                ave_ip = np.mean(self.__calcData[:, 3], dtype=float)
+                average = np.array([
+                    [ThreadType.PLASMA, ave_ip],
+                    [ThreadType.PRESSURE1, ave_p1],
+                    [ThreadType.PRESSURE2, ave_p2]
+                ])
+
                 self.sigStep.emit(self.__rawData, self.__calcData, average, self.__ttype, self.__startTime)
-                self.__rawData = np.zeros(shape=(STEPtest, 3))
-                self.__calcData = np.zeros(shape=(STEPtest, 3))
+                self.__rawData = np.zeros(shape=(STEPtest, 7))
+                self.__calcData = np.zeros(shape=(STEPtest, 4))
+                step = 0
+            else:
+                step += 1
+            totalStep += 1
+
+            self.__app.processEvents()
+
+        else:
+            if self.__calcData[step][0] == 0.0:
+                step -= 1
+            if step > -1:
+                # get average
+                ave_p1 = np.mean(self.__calcData[:, 1], dtype=float)
+                ave_p2 = np.mean(self.__calcData[:, 2], dtype=float)
+                ave_ip = np.mean(self.__calcData[:, 3], dtype=float)
+                average = np.array([
+                    [ThreadType.PLASMA, ave_ip],
+                    [ThreadType.PRESSURE1, ave_p1],
+                    [ThreadType.PRESSURE2, ave_p2]
+                ])
+
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], average, self.__ttype, self.__startTime)
+
+            self.sigMsg.emit(
+                "Worker #{} aborting work at step {}".format(self.__id, totalStep)
+            )
+        self.sigDone.emit(self.__id, self.__ttype)
+        return
+
+    def __testTemp(self):
+        totalStep = 0
+        step = 0
+        while not (self.__abort):
+            time.sleep(0.25)
+            STEPtest = STEP
+            temperature = (np.random.normal()+1)/10000
+
+            deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
+            self.__rawData[step] = [deltaSeconds, temperature, self.__presetTemp]
+
+            if step%(STEPtest-1) == 0 and step != 0:
+                # get average
+                ave = np.mean(self.__rawData[:, 1], dtype=float)
+                average = np.array([
+                    [ThreadType.TEMPERATURE, ave],
+                ])
+
+                self.sigStep.emit(self.__rawData, self.__rawData, average, self.__ttype, self.__startTime)
+                self.__rawData = np.zeros(shape=(STEPtest, 3), dtype=object)
                 step = 0
             else:
                 step += 1
@@ -354,10 +409,13 @@ class Worker(QtCore.QObject):
             if self.__rawData[step][0] == 0.0:
                 step -= 1
             if step > -1:
-                aveValue = np.mean(self.__rawData[:step+1][1], dtype=float)
-                aveValue = self.__ttype.getCalcValue(aveValue,IGrange=m)
-                self.__calcData = self.__ttype.getCalcArray(self.__rawData,IGrange=m)
-                self.sigStep.emit(self.__rawData[:step+1, :], self.__calcData[:step+1, :], aveValue, self.__ttype, self.__startTime)
+                # get average
+                ave = np.mean(self.__rawData[:, 1], dtype=float)
+                average = np.array([
+                    [ThreadType.TEMPERATURE, ave]
+                ])
+
+                self.sigStep.emit(self.__rawData[:step+1, :], self.__rawData[:step+1, :], average, self.__ttype, self.__startTime)
 
             self.sigMsg.emit(
                 "Worker #{} aborting work at step {}".format(self.__id, totalStep)

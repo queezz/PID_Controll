@@ -23,6 +23,8 @@ class ControlDock(Dock):
 
         self.valueBw = QtGui.QTextBrowser()
         self.valueBw.setMaximumHeight(80)
+        self.valueBw.setCurrentFont(QtGui.QFont("Courier New")) 
+
         self.scaleBtn = ScaleButtons()
         self.IGmode = QtGui.QComboBox()
         items = ["Torr","Pa"]
@@ -74,22 +76,6 @@ class ControlDock(Dock):
         )
         self.widget.layout.setVerticalSpacing(5)
         self.widget.layout.addItem(self.verticalSpacer)
-
-    def setBwtext(self, ttype: ThreadType, value: float):
-        """ Update value in the value browser """
-        # Obsolete, exchanged to one browser for all, set-up in main.py
-        
-        txt = f"""<font size=5 color="#d1451b">{value:.2f}</font>"""
-        if ttype == ThreadType.PRASMA:
-            self.valuePraBw.setText(txt)
-        elif ttype == ThreadType.TEMPERATURE:
-            self.valueTBw.setText(txt)
-        elif ttype == ThreadType.PRESSURE1:
-            self.valueP1Bw.setText(txt)
-        elif ttype == ThreadType.PRESSURE2:
-            self.valueP2Bw.setText(txt)
-        else:
-            return
 
 if __name__ == "__main__":
     pass
