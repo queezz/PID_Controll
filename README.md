@@ -42,6 +42,34 @@ The analog signals from vacuum gauges, 0 - 10 V, and the K-type thermocouple, 0 
 - RPi.GPIO
 ```
 
+`pyqtgraph` requires either pyqt5 or pyside. To install pyqt5, use `apt-get`:
+
+```py
+sudo apt-get update
+sudo apt-get install qt5-default pyqt5-dev pyqt5-dev-tools
+```
+
+RPi.GPIO:
+
+```
+sudo apt-get update
+sudo apt-get install rpi.gpio
+```
+
+python3-smbus:
+
+```
+python3 -m pip install smbus --user
+```
+
+or
+
+```
+sudo apt-get install python3-smbus
+```
+
+
+
 # 3. Usage
 
 ## 3.1 start Logger
@@ -55,3 +83,33 @@ $ pyton3 main.py
 ### Data folder
 
 The data folder name and location is stored in the settings file, .setings - a csv file. By default the data folder is placed relatively to the parent directory in `../data`.
+
+
+
+# 4. What is where
+
+In the `Worker` thread, `worker.py` class from `customTypes.py` has method `getCalcValue` for each type of  signal, which calls a method to convert signal into data.
+
+
+
+`customTypes.py`:
+
+```python
+def getCalcValue(self, data: float):
+    if self == self.PLASMA:
+        # TODO: calc
+        return data
+    elif self == self.TEMPERATURE:
+        return calcTemp(data)
+    elif self == self.PRESSURE1:
+        return data
+    elif self == self.PRESSURE2:
+        return calcPfePres(data)
+    else:
+        return data
+```
+
+
+## Pressure from Ionization Gauge Vacuumeter
+
+`IGmode` and `IGrange` determine log or normal scale, as well as the multiplier for normal scale. A set method is defined in the `worker.py`. The mode will be sent to `getCalcValue` method, which has to call `calcIGPressure` method with this parameters.

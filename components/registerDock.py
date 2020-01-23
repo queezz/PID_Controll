@@ -46,12 +46,17 @@ class RegisterDock(Dock):
         txt = "<font color={}><h4>{}</h4></font>".format(color, text)
         return txt
 
-    def setTemp(self, temperature: int):
+    def setTempText(self,temperature, temp_now):
+        """ set values into browser"""
         htmltag = '<font size=6 color="#d1451b">'
-        setpoint = '<font size=5 color="#d1451b">setpoint: </font>'
+        htag1 = '<font size=6 color = "#4275f5">'
+        cf = '</font>'
         self.tempBw.setText(
-            f'{setpoint}{htmltag}{temperature} {DEGREE_SMB}C</font>'
-        )
+            f'{htmltag}{temperature} {DEGREE_SMB}C{cf}'
+            f'&nbsp;&nbsp;&nbsp;{htag1}{temp_now} {DEGREE_SMB}C{cf}')
+        
+    def setTemp(self, temperature: int,temp_now):
+        self.setTempText(temperature,temp_now)
         self.temperatureSB.setValue(temperature)
 
 if __name__ == "__main__":
