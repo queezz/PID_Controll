@@ -284,7 +284,7 @@ class Worker(QtCore.QObject):
 
     # MARK: - Control
     def __controlTemp(self, aveTemp: np.ndarray, eCurrent: ElectricCurrent):
-        e = self.__presetTemp - aveTemp[0][ThreadType.TEMPERATURE]
+        e = self.__presetTemp - aveTemp[0, 1]
         integral = self.__sumE + e * TIMESLEEP
         derivative = (e - self.__exE) / TIMESLEEP
 
@@ -304,7 +304,7 @@ class Worker(QtCore.QObject):
 
     def __controlTemp1(self, aveTemp: float, steps: int):
         if steps <= 0:
-            d = self.__presetTemp - aveTemp
+            d = self.__presetTemp - aveTemp[0, 1]
             if d <= 1.5:
                 return -1
             elif d >= 15:
