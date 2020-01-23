@@ -188,7 +188,7 @@ class Worker(QtCore.QObject):
         self.sigDone.emit(self.__id, self.__ttype)
         return
 
-    TT = TRUE
+    TT = True
     # temperature plot
     @QtCore.pyqtSlot()
     def __plotT(self):
