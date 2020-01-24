@@ -284,12 +284,15 @@ class MainWidget(QtCore.QObject, UIWindow):
         # TODO: save interval
         self.__save(rawResult, ttype, startTime)
         if data is None:
-            data = calcResult
-            data[:, 1] = data[:, ttype.getIndex()]
+            data = np.zeros([5, 2])
+            data[:, 0] = calcResult[:, 0]
+            data[:, 1] = calcResult[:, ttype.getIndex()]
         else:
-            calcData = calcResult
-            calcData[:, 1] = calcData[:, ttype.getIndex()]
-            data = np.concatenate((data, np.array(calcResult)))
+            steps = calcResult.shape[0]
+            calcData = np.zeros([steps, 2])
+            calcData[:, 0] = calcResult[:, 0]
+            calcData[:, 1] = calcResult[:, ttype.getIndex()]
+            data = np.concatenate((data, np.array(calcData)))
         return data
 
     """ write csv """
