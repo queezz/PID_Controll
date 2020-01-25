@@ -215,7 +215,7 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         # creates file at the start, next data
         # in the loop is placed in another file
-        # why not to save filename here, and reuse it later?
+        # TODO: why not to save filename here, and reuse it later?
 
         thread.started.connect(worker.work)
         thread.start()
@@ -251,13 +251,15 @@ class MainWidget(QtCore.QObject, UIWindow):
         )
 
         scale = self.__scale.value
+        MAX_SIZE = 20000
         if ttype == ThreadType.TEMPERATURE:
             # get data
             t_data = self.tData
             # set and save data
             self.tData = self.__setStepData(t_data, rawResult, calcResult, ttype, startTime)
             # plot data
-            self.valueTPlot.setData(self.tData[scale:, 0], self.tData[scale:, 1])
+            skip = int((self.tData.shape[0]+MAX_SIZE-1)/MAX_SIZE)
+            self.valueTPlot.setData(self.tData[scale::skip, 0], self.tData[scale::skip, 1])
         elif ttype == ThreadType.PLASMA or ttype==ThreadType.PRESSURE1 or ttype==ThreadType.PRESSURE2:
             # get data
             pl_data = self.plaData
@@ -268,9 +270,10 @@ class MainWidget(QtCore.QObject, UIWindow):
             self.p1Data = self.__setStepData(p1_data, rawResult, calcResult, ThreadType.PRESSURE1, startTime)
             self.p2Data = self.__setStepData(p2_data, rawResult, calcResult, ThreadType.PRESSURE2, startTime)
             # plot data
-            self.valuePlaPlot.setData(self.plaData[scale:, 0], self.plaData[scale:, 1])
-            self.valueP1Plot.setData(self.p1Data[scale:, 0], self.p1Data[scale:, 1])
-            self.valueP2Plot.setData(self.p2Data[scale:, 0], self.p2Data[scale:, 1])
+            skip = int((self.plaData.shape[0]+MAX_SIZE-1)/MAX_SIZE)
+            self.valuePlaPlot.setData(self.plaData[scale::skip, 0], self.plaData[scale::skip, 1])
+            self.valueP1Plot.setData(self.p1Data[scale::skip, 0], self.p1Data[scale::skip, 1])
+            self.valueP2Plot.setData(self.p2Data[scale::skip, 0], self.p2Data[scale::skip, 1])
         else:
             return
 
@@ -281,12 +284,15 @@ class MainWidget(QtCore.QObject, UIWindow):
         # TODO: save interval
         self.__save(rawResult, ttype, startTime)
         if data is None:
-            data = calcResult
-            data[:, 1] = data[:, ttype.getIndex()]
+            data = np.zeros([5, 2])
+            data[:, 0] = calcResult[:, 0]
+            data[:, 1] = calcResult[:, ttype.getIndex()]
         else:
-            calcData = calcResult
-            calcData[:, 1] = calcData[:, ttype.getIndex()]
-            data = np.concatenate((data, np.array(calcResult)))
+            steps = calcResult.shape[0]
+            calcData = np.zeros([steps, 2])
+            calcData[:, 0] = calcResult[:, 0]
+            calcData[:, 1] = calcResult[:, ttype.getIndex()]
+            data = np.concatenate((data, np.array(calcData)))
         return data
 
     """ write csv """
