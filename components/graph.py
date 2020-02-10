@@ -16,9 +16,12 @@ class Graph(pg.GraphicsLayoutWidget):
         self.tempPl = self.addPlot(row=1, col=0)
         labelStyle = {'color': '#FFF', 'font-size': '14pt'}
         self.tempPl.setLabel('left', "T", units=DEGREE_SMB+'C',**labelStyle)
+        # Adjust the label offset
+        self.tempPl.getAxis('left').setWidth(100)
 
         self.presPl = self.addPlot(row=2, col=0)
         self.presPl.setLabel('left', "P", units='Torr',**labelStyle)
+        self.presPl.getAxis('left').setWidth(100)
         self.presPl.setLabel('bottom', "time", units='sec',**labelStyle)
         
         self.setBackground(background='#25272b')
