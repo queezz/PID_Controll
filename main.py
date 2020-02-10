@@ -119,7 +119,12 @@ class MainWidget(QtCore.QObject, UIWindow):
 
     def __qmsSignal(self):
         """ qms signal """
-        pi = pigpio.pi()
+        try:
+            pi = pigpio.pi()
+        except:
+            print('pigpio is not defined')
+            return
+
         if self.controlDock.qmsSigSw.isChecked():
             self.qmsSigThread = qmsSignal.QMSSignal(pi, self.__app, 1)
             self.qmsSigThread.finished.connect(self.qmsSigThFin)
