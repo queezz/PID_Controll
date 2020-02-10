@@ -49,10 +49,11 @@ class MainWidget(QtCore.QObject, UIWindow):
 
         self.graph.removeItem(self.graph.plaPl) # remove Plasma current plot
         
+        # Plot line colors
         self.valuePlaPlot = self.graph.plaPl.plot(pen='#6ac600')
         self.valueTPlot = self.graph.tempPl.plot(pen='#5999ff')
         self.valueP1Plot = self.graph.presPl.plot(pen='#6ac600')
-        self.valueP2Plot = self.graph.presPl.plot(pen='#5999ff')
+        self.valueP2Plot = self.graph.presPl.plot(pen='#c9004d')
         self.graph.tempPl.setXLink(self.graph.presPl)
         
         self.graph.presPl.setLogMode(y=True)
@@ -83,6 +84,11 @@ class MainWidget(QtCore.QObject, UIWindow):
         self.controlDock.OnOffSW.clicked.connect(self.__onoff)
         self.controlDock.quitBtn.clicked.connect(self.__quit)
         self.controlDock.qmsSigSw.clicked.connect(self.__qmsSignal)
+
+        self.scaleDock.Pmin.valueChanged.connect(self.__updatePScale)
+        self.scaleDock.Pmax.valueChanged.connect(self.__updatePScale)
+        self.scaleDock.Tmax.valueChanged.connect(self.__updateTScale)
+        self.scaleDock.autoscale.clicked.connect(self.__autoscale)
         
     def __quit(self):
         """ terminate app """
@@ -107,6 +113,24 @@ class MainWidget(QtCore.QObject, UIWindow):
                 self.controlDock.quitBtn.setEnabled(True)
             else:
                 self.controlDock.OnOffSW.setChecked(True)                
+
+    def __updatePScale(self):
+        """ Updated plot limits for the Pressure viewgraph """
+        pmin,pmax = [self.scaleDock.Pmin.value(),self.scaleDock.Pmax.value()]
+
+        #self.graph.presPl.setLogMode(y=True)
+        if pmin < pmax:
+            self.graph.presPl.setYRange(pmin,pmax,0)
+
+    def __updateTScale(self):
+        """ Updated plot limits for the Temperature viewgraph """
+        tmax = self.scaleDock.Tmax.value()
+        self.graph.tempPl.setYRange(0,tmax,0)
+
+    def __autoscale(self):
+        """ Set all plots to autoscale """
+        self.graph.tempPl.enableAutoRange()
+        self.graph.presPl.enableAutoRange()
 
     def fulltonormal(self):
        """ Change from full screen to normal view on click"""
@@ -236,20 +260,30 @@ class MainWidget(QtCore.QObject, UIWindow):
         """ set Bw text """
         temp_now = f"{self.currentvals[ThreadType.TEMPERATURE]:.0f}"
         self.registerDock.setTempText(self.__temp,temp_now)
-        txt = f"""<font size=5 color="#d1451b">
+#dd1451b
+        txt = f"""
               <table>
                  <tr>
                   <td>
-                    P1 = {self.currentvals[ThreadType.PRESSURE1]:.1e}
+                  <font size=5 color="#6ac600">
+                    Pd = {self.currentvals[ThreadType.PRESSURE1]:.1e}
+                  </font>
+                  </td>
+                  <td>
+                   <font size=5 color="#c9004d"> 
+                    Pu = {self.currentvals[ThreadType.PRESSURE2]:.1e}
+                   </font>
                   </td>
                  </tr>
                  <tr>
                   <td>
-                    P2 = {self.currentvals[ThreadType.PRESSURE2]:.1e}
+                   <font size=5 color="#6b32a8"> 
+                    I = {self.currentvals[ThreadType.PLASMA]:.2f}
+                   </font>
                   </td>
                  </tr>
                 </table>
-        </font>"""
+        """
         self.controlDock.valueBw.setText(txt) 
         self.controlDock.gaugeT.update_value(
             self.currentvals[ThreadType.TEMPERATURE]

@@ -6,6 +6,7 @@ from components.controlDock import ControlDock
 from components.logDock import LogDock
 from components.registerDock import RegisterDock
 from components.graph import Graph
+from components.plotscaleDock import PlotScaleDock 
 
 class UIWindow(object):
 
@@ -23,6 +24,7 @@ class UIWindow(object):
         [i.setStretch(*(10,20)) for i in [self.controlDock, self.logDock,self.registerDock]]
         self.controlDock.setStretch(*(10,300))
         self.graph = Graph()
+        self.scaleDock = PlotScaleDock()
         
         self.MainWindow.setGeometry(20, 50, 1000, 600)
         #self.MainWindow.showFullScreen()
@@ -38,7 +40,8 @@ class UIWindow(object):
         self.tabwidg.addTab(self.area, "Data")
 
         self.area.addDock(self.plotDock, "top")
-        self.area.addDock(self.controlDock, "left")
+        self.area.addDock(self.scaleDock, "left")
+        self.area.addDock(self.controlDock, "above",self.scaleDock)
         self.area.addDock(self.logDock, "bottom", self.controlDock)
         self.area.addDock(self.registerDock, "above", self.logDock)
 

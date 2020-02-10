@@ -147,14 +147,19 @@ class Worker(QtCore.QObject):
             time.sleep(TIMESLEEP)
             
             # READ DATA
-            p1_v = aio.analog_read_volt(CHP1, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
-            p2_v = aio.analog_read_volt(CHP2, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
-            ip_v = aio.analog_read_volt(CHIP, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
+            CHNLS = [CHP1,CHP2,CHIP]
+            kws = {'pga',aio.PGA.PGA_10_0352V}
+            arg = [aio.DataRate.DR_860SPS]
+            p1_v,p2_v,ip_v = [aio.analog_read_volt(CH,*arg,**kws) for CH in CHNLS]
+
+           # p1_v = aio.analog_read_volt(CHP1, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
+           # p2_v = aio.analog_read_volt(CHP2, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
+           # ip_v = aio.analog_read_volt(CHIP, aio.DataRate.DR_860SPS, pga=aio.PGA.PGA_10_0352V)
 
             deltaSeconds = (datetime.datetime.now() - self.__startTime).total_seconds()
             self.__rawData[step] = [deltaSeconds, p1_v, p2_v, ip_v, self.__IGmode, self.__IGrange, self.__qmsSignal]
 
-            # calcurate DATA
+            # calculate DATA
             p1_d = ThreadType.getCalcValue(ThreadType.PRESSURE1, p1_v, IGmode=self.__IGmode, IGrange=self.__IGrange)
             p2_d = ThreadType.getCalcValue(ThreadType.PRESSURE2, p2_v)
             ip_d = ip_v # TODO: calc
