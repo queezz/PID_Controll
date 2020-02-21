@@ -9,13 +9,12 @@ from readsettings import get_datafolderpth
 TEST = False
 
 # Specify cable connections to ADC
-CHP1 = 15
-CHP2 = 16
-CHIP = 5
-CHT  = 1
+CHP1 = 0 # 15, Ionization Gauge
+CHP2 = 1 # 16, Pfeiffer single gauge
+CHIP = 2 # 5, Plasma current, Hall effect sensor
+CHT  = 0 # 0 -> CS0, 1 -> CS1
 
 # Raspi outputs
-
 
 TIMESLEEP = get_datafolderpth()[2]
 # Number of data points for collection, steps%STEP == 0
@@ -148,7 +147,7 @@ class Worker(QtCore.QObject):
             
             # READ DATA
             CHNLS = [CHP1,CHP2,CHIP]
-            kws = {'pga',aio.PGA.PGA_10_0352V}
+            kws = {'pga':aio.PGA.PGA_10_0352V}
             arg = [aio.DataRate.DR_860SPS]
             p1_v,p2_v,ip_v = [aio.analog_read_volt(CH,*arg,**kws) for CH in CHNLS]
 
